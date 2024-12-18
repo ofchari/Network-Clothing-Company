@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ncc/view/screens/goods_inward.dart';
 import 'package:ncc/view/screens/goods_outward.dart';
+import 'package:ncc/view/screens/reports.dart';
 
 
 class Dashboard extends StatefulWidget {
@@ -92,22 +93,23 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
             SizedBox(height: 5.h,),
-            Container(
-              height: height/7.h,
-              width: width/1.09.w,
-              decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(30.r)
+            GestureDetector(
+              onTap: (){
+                Get.to(Reports());
+              },
+              child: Container(
+                height: height/7.h,
+                width: width/1.09.w,
+                decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(30.r)
+                ),
+                child: Center(child: Text("Reports",style: GoogleFonts.outfit(textStyle: TextStyle(fontSize: 24.3.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
               ),
-              child: Center(child: Text("Reports",style: GoogleFonts.outfit(textStyle: TextStyle(fontSize: 24.3.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
             )
-
-
           ],
         ),
-
       ),
-
     );
   }
 }
