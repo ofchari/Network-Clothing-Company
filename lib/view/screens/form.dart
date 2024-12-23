@@ -197,11 +197,18 @@ class _FormIpState extends State<FormIp> {
         );
 
         if (userExists) {
-          // Store all credentials
+          // Find the USCODE for the user
+          final user = users.firstWhere((user) =>
+          (user['USERNAME'] as String).toLowerCase() == username.toLowerCase()
+          );
+          final usCode = user['USCODE'];
+
+          // Store user credentials and USCODE
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('serverIp', serverIp);
           await prefs.setString('port', port);
           await prefs.setString('username', username);
+          await prefs.setString('usCode', usCode);
 
           Get.off(() => const Dashboard()); // Navigate to Dashboard, replacing current route
         } else {
@@ -214,6 +221,7 @@ class _FormIpState extends State<FormIp> {
       _showError("Connection Error: $e");
     }
   }
+
 
   void _showError(String message) {
     showDialog(
@@ -305,7 +313,7 @@ class _FormIpState extends State<FormIp> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.settings, color: Colors.blueGrey, size: 50),
+                    icon: const Icon(Icons.settings, color: Colors.blueGrey, size: 50),
                     onPressed: _showSettingsDialog,
                   ),
                 ],

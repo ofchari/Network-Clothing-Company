@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -24,6 +23,8 @@ class GoodsInward extends StatefulWidget {
 class _GoodsInwardState extends State<GoodsInward> {
   late double height;
   late double width;
+  late String usCode;
+  late int orderNumber;
   List<dynamic> docIds = [];
   String? selectedDocId;
   TextEditingController gstController = TextEditingController();
@@ -88,7 +89,7 @@ class _GoodsInwardState extends State<GoodsInward> {
   final docMaxNo = TextEditingController();     // DOCMAXNO
   final dPrefix = TextEditingController();      // DPREFIX
   final docId1 = TextEditingController();       // DOCID1
-  final usCode = TextEditingController();       // USCODE
+  final ussCode = TextEditingController();       // USCODE
   final delReq = TextEditingController();       // DELREQ
   final docIdOld = TextEditingController();     // DOCIDOLD
   final party1 = TextEditingController();       // PARTY1
@@ -101,6 +102,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     // TODO: implement initState
     super.initState();
     fetchDocIds();
+    _loadUserDetails();
   }
 
                  /// Get Api's method for Doc Id's //
@@ -144,6 +146,13 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    usCode = prefs.getString('usCode') ?? 'UNKNOWN';
+    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;  // Start from 1 for the user
+
+    setState(() {});
+  }
 
 
   // /// Post method for Goods Inward //
@@ -174,6 +183,12 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
+    // final prefs = await SharedPreferences.getInstance();
+
+    // Increment the order number
+    await prefs.setInt('orderNumber_$usCode', orderNumber + 1);
+
+    final dcNo = "$usCode/24/I/$orderNumber";
     // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/dbconnect.php';
 
@@ -201,7 +216,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "DOCDATE": docDate.text, // Extracted text
       "DELCTRL": delCtrl.text, // Extracted text
       "DEPT": dept.text, // Extracted text
-      "DCNO": dcNo.text, // Extracted text
+      "DCNO": "$usCode/24/I/$orderNumber", // Extracted text
       "STIME": stime.text, // Extracted text
       "PARTY": partyNameController.text, // Extracted text
       "DELQTY": delQty.text, // Extracted text
@@ -232,7 +247,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "DOCMAXNO": docMaxNo.text, // Extracted text
       "DPREFIX": dPrefix.text, // Extracted text
       "DOCID1": docId1.text, // Extracted text
-      "USCODE": usCode.text, // Extracted text
+      "USCODE": ussCode.text, // Extracted text
       "DELREQ": delReq.text, // Extracted text
       "DOCIDOLD": docIdOld.text, // Extracted text
       "PARTY1": party1.text, // Extracted text
@@ -413,10 +428,10 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: docid,
+                  // controller: docid,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
-                      labelText: "",
+                      labelText: "$usCode/24/I/$orderNumber",
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -446,12 +461,12 @@ class _GoodsInwardState extends State<GoodsInward> {
               borderRadius: BorderRadius.circular(6.r),
             ),
             child: DropdownSearch<String>(
-              popupProps: PopupProps.dialog(
+              popupProps: const PopupProps.dialog(
                 showSearchBox: true,
                 searchFieldProps: TextFieldProps(
                   decoration: InputDecoration(
                     hintText: "Search Po/Dc No",
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                   ),
                 ),
               ),
@@ -697,6 +712,40 @@ class _GoodsInwardState extends State<GoodsInward> {
                       ),
                       prefixIcon:  Icon(
                         Icons.alarm,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none
+                  ),
+                ),
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(text: "     Grn qty ", weight: FontWeight.w500, color: Colors.black)),
+              SizedBox(height: 7.5.h,),
+              Container(
+                height: height/15.2.h,
+                width: width/1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(
+                        color: Colors.grey.shade500
+                    ),
+                    borderRadius: BorderRadius.circular(6.r)
+                ),
+                child: TextFormField(
+                  controller: typeController,
+                  style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon:  Icon(
+                        Icons.merge_type,
                         color: Colors.grey.shade700,
                         size: 17.5,
                       ),

@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ncc/view/screens/goods_inward.dart';
 import 'package:ncc/view/screens/goods_outward.dart';
 import 'package:ncc/view/screens/reports.dart';
-import 'package:ncc/view/widgets/buttons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form.dart';
@@ -85,7 +84,7 @@ class _DashboardState extends State<Dashboard> {
               children: [
                 SizedBox(width: 50.w,),
                 Padding(
-                  padding:  EdgeInsets.only(left: 12.0,right: 12.0),
+                  padding:  const EdgeInsets.only(left: 12.0,right: 12.0),
                   child: Container(
                     height: height/12.1.h,
                     width: width/3.w,
@@ -95,12 +94,12 @@ class _DashboardState extends State<Dashboard> {
                   ),
                 ),
                 Padding(
-                  padding:  EdgeInsets.only(left: 12.0,right: 12.0),
+                  padding:  const EdgeInsets.only(left: 12.0,right: 12.0),
                   child: GestureDetector(
                       onTap: (){
                         logout();
                       },
-                      child: Icon(Icons.logout,color: Colors.red,size: 30,)),
+                      child: const Icon(Icons.logout,color: Colors.red,size: 30,)),
                 ),
               ],
             ),

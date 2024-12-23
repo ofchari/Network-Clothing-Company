@@ -1,13 +1,12 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:ncc/view/screens/scanner.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
@@ -25,8 +24,10 @@ class GoodsOutward extends StatefulWidget {
 class _GoodsOutwardState extends State<GoodsOutward> {
   late double height;
   late double width;
+  late String usCode;
+  late int orderNumber;
   bool isEditable = false;
-  final _dateController = TextEditingController();
+  // final _dateController = TextEditingController();
   final _dcNoController = TextEditingController();
   final _dcDateController = TextEditingController();
   final _partyController = TextEditingController();
@@ -83,7 +84,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final docMaxNo = TextEditingController();     // DOCMAXNO
   final dPrefix = TextEditingController();      // DPREFIX
   final docId1 = TextEditingController();       // DOCID1
-  final usCode = TextEditingController();       // USCODE
+  final ussCode = TextEditingController();       // USCODE
   final delReq = TextEditingController();       // DELREQ
   final docIdOld = TextEditingController();     // DOCIDOLD
   final party1 = TextEditingController();       // PARTY1
@@ -120,6 +121,14 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       );
     }
   }
+               /// Load card details ///
+  Future<void> _loadUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    usCode = prefs.getString('usCode') ?? 'UNKNOWN';
+    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;  // Start from 1 for the user
+
+    setState(() {});
+  }
 
                 /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
@@ -148,6 +157,10 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       );
       return;
     }
+    // Increment the order number
+    await prefs.setInt('orderNumber_$usCode', orderNumber + 1);
+
+    final dcNo = "$usCode/24/I/$orderNumber";
 
     // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/outward_post_api.php';
@@ -174,7 +187,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "CANCELREMARKS": "",
       "WFROLES": "",
       "DOCDATE": "2024-12-01",
-      "DCNO": _dcDateController.text,
+      "DCNO": _dcNoController.text,
       "STIME": "12:00 PM",
       "PARTY": party1.text,  // Fix: Access the text property
       "DELQTY": "100.5",
@@ -182,7 +195,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "STMUSER": stmUser.text,
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
-      "DCNOS": dcNo.text,  // Fix: Access the text property
+      "DCNOS": "DcNoo",  // Fix: Access the text property
       "ATIME": formattedDate,
       "ITIME": formattedDate,
       "DCDATE": _dcDateController.text,  // Fix: Access the text property
@@ -193,7 +206,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "DOCMAXNO": docMaxNo.text,
       "DPREFIX": dPrefix.text,
       "DOCID": docId1.text,
-      "USCODE": usCode.text
+      "USCODE": ussCode.text
     };
 
     print('Request Data: $data');
@@ -273,11 +286,27 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   }
 
 
+  void openMobileScanner() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BarcodeScannerScreen(),
+      ),
+    );
+
+    if (result != null && result is String) {
+      setState(() {
+        _dcNoController.text = result; // Populate scanned value in TextFormField.
+      });
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     fetchAndPopulateData;
+    _loadUserDetails();
   }
 
   @override
@@ -375,7 +404,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: TextFormField(
-                  controller: _dcDateController,
+                  // controller: _dcDateController,
                   readOnly: true,
                   style: GoogleFonts.dmSans(
                     textStyle: TextStyle(
@@ -385,7 +414,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                     ),
                   ),
                   decoration: InputDecoration(
-                    labelText: "",
+                    labelText: "$usCode/24/I/$orderNumber",
                     labelStyle: GoogleFonts.sora(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w500,
@@ -411,6 +440,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                 ),
               ),
               SizedBox(height: 7.5.h),
+              // Updated TextFormField widget:
               Container(
                 height: height / 15.h,
                 width: width / 1.13.w,
@@ -626,3 +656,4 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     );
   }
 }
+
