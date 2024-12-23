@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:ncc/services/goods_Outward_api.dart';
+import 'package:ncc/services/goods_Inward_api.dart';
 
-import '../../model/json_model/Outward_get_json.dart';
+import '../../model/json_model/Inward_get_json.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -30,7 +30,7 @@ class _LoginState extends State<Login> {
                 future: fetchOutward(),
                 builder: (context,snapshot){
                   if(snapshot.connectionState == ConnectionState.waiting){
-                    return CircularProgressIndicator();
+                    return const CircularProgressIndicator();
                   }
                   else if(snapshot.hasError){
                     return Text("${snapshot.error}");
@@ -40,14 +40,14 @@ class _LoginState extends State<Login> {
                         child: ListView.builder(
                           itemCount: snapshot.data!.length,
                             itemBuilder: (context ,index){
-                            Datum outs = snapshot.data![index];
-                            print("${outs.type}");
-                              print("${outs.type}");
-                              print("${outs.type}");
+                              Data outs = snapshot.data![index];
+                            // print("${outs.type}");
+                            //   print("${outs.type}");
+                            //   print("${outs.type}");
                             return Column(
                               children: [
                                 SizedBox(height: 50.h,),
-                                Text(outs.type.toString()),
+                                // Text(outs.type.toString()),
 
                               ],
                             );

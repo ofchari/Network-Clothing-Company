@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,7 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard.dart';
 
 class GoodsInward extends StatefulWidget {
@@ -21,8 +24,12 @@ class GoodsInward extends StatefulWidget {
 class _GoodsInwardState extends State<GoodsInward> {
   late double height;
   late double width;
+  List<dynamic> docIds = [];
+  String? selectedDocId;
+  TextEditingController gstController = TextEditingController();
+  TextEditingController typeController = TextEditingController();
+  TextEditingController partyNameController = TextEditingController();
   final _dateController = TextEditingController();
-  // DateTime now = DateTime.now();
   String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
   // Get the current date and time
@@ -32,27 +39,143 @@ class _GoodsInwardState extends State<GoodsInward> {
   String currentTime = DateTime.now().toIso8601String();
 
   // print(currentTime) // Output: e.g., 2024-12-18T14:35:20.123Z
+           /// Controller for post method //
+  final gateInMasId = TextEditingController();  // GATEINMASID
+  final cancel = TextEditingController();       // CANCEL
+  final sourceId = TextEditingController();     // SOURCEID
+  final mapName = TextEditingController();      // MAPNAME
+  final username = TextEditingController();     // USERNAME
+  final modifiedOn = TextEditingController();   // MODIFIEDON
+  final createdBy = TextEditingController();    // CREATEDBY
+  final createdOn = TextEditingController();    // CREATEDON
+  final wkId = TextEditingController();         // WKID
+  final appLevel = TextEditingController();     // APP_LEVEL
+  final appDesc = TextEditingController();      // APP_DESC
+  final appSLevel = TextEditingController();    // APP_SLEVEL
+  final cancelRemarks = TextEditingController(); // CANCELREMARKS
+  final wfRoles = TextEditingController();      // WFROLES
+  final docDate = TextEditingController();      // DOCDATE
+  final delCtrl = TextEditingController();      // DELCTRL
+  final dept = TextEditingController();         // DEPT
+  final dcNo = TextEditingController();         // DCNO
+  final stime = TextEditingController();        // STIME
+  // final party = TextEditingController();        // PARTY
+  final delQty = TextEditingController();       // DELQTY
+  final dupChk = TextEditingController();       // DUPCHK
+  final jobClose = TextEditingController();     // JOBCLOSE
+  final stmUser = TextEditingController();      // STMUSER
+  final remarks = TextEditingController();      // REMARKS
+  final eName = TextEditingController();        // ENAME
+  final dcDate = TextEditingController();       // DCDATE
+  final dinWno = TextEditingController();       // DINWNO
+  final dinWon = TextEditingController();       // DINWON
+  final dinWby = TextEditingController();       // DINWBY
+  final toDept = TextEditingController();       // TODEPT
+  final aTime = TextEditingController();        // ATIME
+  final iTime = TextEditingController();        // ITIME
+  final finYear = TextEditingController();      // FINYEAR
+  // final docId = TextEditingController();        // DOCID
+  final supp = TextEditingController();         // SUPP
+  final jobClosedBy = TextEditingController();  // JOBCLOSEDBY
+  final jClosedOn = TextEditingController();    // JCLOSEDON
+  final userId = TextEditingController();       // USERID
+  final nParty = TextEditingController();       // NPARTY
+  final podcChk = TextEditingController();      // PODCCHK
+  // final gst = TextEditingController();          // GST
+  final gstYn = TextEditingController();        // GSTYN
+  final podc = TextEditingController();         // PODC
+  final recId = TextEditingController();        // RECID
+  final docMaxNo = TextEditingController();     // DOCMAXNO
+  final dPrefix = TextEditingController();      // DPREFIX
+  final docId1 = TextEditingController();       // DOCID1
+  final usCode = TextEditingController();       // USCODE
+  final delReq = TextEditingController();       // DELREQ
+  final docIdOld = TextEditingController();     // DOCIDOLD
+  final party1 = TextEditingController();       // PARTY1
+  final dupChk1 = TextEditingController();      // DUPCHK1
+  final docid = TextEditingController();      // DUPCHK1
 
-  /// Controller for post method //
-  final exports = TextEditingController();
-  final docid = TextEditingController();
-  final podc = TextEditingController();
-  final gst = TextEditingController();
-  final type = TextEditingController();
-  final party = TextEditingController();
-  final dc = TextEditingController();
-  final date = TextEditingController();
-  final qtys = TextEditingController();
 
-                  /// Post method for Goods Inward //
-  /// Post method for Goods Inward //
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchDocIds();
+  }
+
+                 /// Get Api's method for Doc Id's //
+  Future<void> fetchDocIds() async {
+    final url = Uri.parse('http://192.168.1.8:8080/db/gate_gst_get_api.php');
+    try {
+      final response = await http.get(url);
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is List) {
+          setState(() {
+            docIds = data; // Ensure the type is List<dynamic>
+          });
+          debugPrint('Fetched DocIDs: $docIds');
+        } else {
+          debugPrint('Unexpected data format: $data');
+        }
+      } else {
+        debugPrint('Failed to fetch data. Status: ${response.statusCode}');
+      }
+    } catch (error) {
+      debugPrint('Error fetching data: $error');
+    }
+  }
+
+
+  void fillFields(String docId) {
+    final selectedData = docIds.firstWhere((doc) => doc['DOCID'] == docId, orElse: () => null);
+    if (selectedData != null) {
+      setState(() {
+        gstController.text = selectedData['GST'] ?? '';
+        typeController.text = selectedData['PTYPE'] ?? '';
+        partyNameController.text = selectedData['PARTYID'] ?? '';
+      });
+      debugPrint('Selected Data: $selectedData');
+    } else {
+      debugPrint('No matching DOCID found for: $docId');
+    }
+  }
+
+
+
+  // /// Post method for Goods Inward //
   Future<void> MobileDocument(BuildContext context) async {
     // Allow self-signed certificates for development purposes
     HttpClient client = HttpClient();
     client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
 
-    // API endpoint
-    const String url = 'http://192.168.1.7:8080/db/dbconnect.php';
+    // Retrieve dynamic URL from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    if (serverIp.isEmpty || port.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Configuration Error'),
+          content: const Text('Server IP and port are not configured. Please set them in the settings.'),
+          actions: [
+            ElevatedButton(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Construct the dynamic API endpoint
+    final String url = 'http://$serverIp:$port/db/dbconnect.php';
 
     // HTTP headers
     final headers = {
@@ -61,18 +184,64 @@ class _GoodsInwardState extends State<GoodsInward> {
 
     // Set up the data for the API request
     final data = {
-      "Exporter": "NETWORK CLOTHING COMPANY PRIVATED LIMITED",
-      "DocId": docid.text,
-      "PoDcNo": podc.text,
-      "GstNo": gst.text,
-      "Type": type.text,
-      "PartyName": party.text,
-      "DcNoAndDate": "${dc.text}, ${_dateController.text}",
-      "Time": currentTime,
-      "GrnQty": 200
+      "GATEINMASID": "1.3277E+13",
+      "CANCEL": "F",
+      "SOURCEID": "0",
+      "MAPNAME": "",
+      "USERNAME": "eagleate",
+      "MODIFIEDON": formattedDate,
+      "CREATEDBY": "eagleate",
+      "CREATEDON": formattedDate,
+      "WKID": "",
+      "APP_LEVEL": "1",
+      "APP_DESC": "1",
+      "APP_SLEVEL": "",
+      "CANCELREMARKS": "",
+      "WFROLES": "",
+      "DOCDATE": docDate.text, // Extracted text
+      "DELCTRL": delCtrl.text, // Extracted text
+      "DEPT": dept.text, // Extracted text
+      "DCNO": dcNo.text, // Extracted text
+      "STIME": stime.text, // Extracted text
+      "PARTY": partyNameController.text, // Extracted text
+      "DELQTY": delQty.text, // Extracted text
+      "DUPCHK": dupChk.text, // Extracted text
+      "JOBCLOSE": "NO",
+      "STMUSER": stmUser.text, // Extracted text
+      "REMARKS": remarks.text, // Extracted text
+      "ENAME": eName.text, // Extracted text
+      "DCDATE": _dateController.text, // Extracted text
+      "DINWNO": dinWno.text, // Extracted text
+      "DINWON": dinWon.text, // Extracted text
+      "DINWBY": dinWby.text, // Extracted text
+      "TODEPT": toDept.text, // Extracted text
+      "ATIME": aTime.text, // Extracted text
+      "ITIME": iTime.text, // Extracted text
+      "FINYEAR": finYear.text, // Extracted text
+      "DOCID": docid.text, // This is already a string
+      "SUPP": supp.text, // Extracted text
+      "JOBCLOSEDBY": jobClosedBy.text, // Extracted text
+      "JCLOSEDON": jClosedOn.text, // Extracted text
+      "USERID": userId.text, // Extracted text
+      "NPARTY": nParty.text, // Extracted text
+      "PODCCHK": podcChk.text, // Extracted text
+      "GST": gstController.text, // Extracted text
+      "GSTYN": gstYn.text, // Extracted text
+      "PODC": selectedDocId, // Extracted text
+      "RECID": recId.text, // Extracted text
+      "DOCMAXNO": docMaxNo.text, // Extracted text
+      "DPREFIX": dPrefix.text, // Extracted text
+      "DOCID1": docId1.text, // Extracted text
+      "USCODE": usCode.text, // Extracted text
+      "DELREQ": delReq.text, // Extracted text
+      "DOCIDOLD": docIdOld.text, // Extracted text
+      "PARTY1": party1.text, // Extracted text
+      "DUPCHK1": dupChk1.text, // Extracted text
     };
 
+
     print('Request Data: $data');
+    print('Dynamic URL: $url');
 
     try {
       // Make the API call
@@ -84,8 +253,16 @@ class _GoodsInwardState extends State<GoodsInward> {
 
       // Handle success
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Show success snackbar
+        Get.snackbar(
+          "Success",
+          "Document posted successfully!",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => Dashboard()),
+          MaterialPageRoute(builder: (context) => const Dashboard()),
         );
       }
       // Handle server-side validation errors
@@ -96,13 +273,13 @@ class _GoodsInwardState extends State<GoodsInward> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Message'),
+            title: const Text('Message'),
             content: SingleChildScrollView(
               child: Text(serverMessages),
             ),
             actions: [
               ElevatedButton(
-                child: Text('OK'),
+                child: const Text('OK'),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -116,11 +293,11 @@ class _GoodsInwardState extends State<GoodsInward> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('Error'),
+            title: const Text('Error'),
             content: Text('Request failed with status: ${response.statusCode}'),
             actions: [
               ElevatedButton(
-                child: Text('OK'),
+                child: const Text('OK'),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -136,11 +313,11 @@ class _GoodsInwardState extends State<GoodsInward> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Error'),
+          title: const Text('Error'),
           content: Text('An unexpected error occurred: $error'),
           actions: [
             ElevatedButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -148,6 +325,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +341,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     },);
   }
   Widget _smallBuildLayout(){
-    /// Define Sizes //
+                /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
@@ -198,11 +376,11 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: exports,
+                  // controller: exports,
                   readOnly: true,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
-                      labelText: "NETWORK CLOTHING COMPANY PRIVATED LIMITED",
+                      labelText: "NETWORK CLOTHING COMPANY PRIVATE LIMITED",
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -218,17 +396,19 @@ class _GoodsInwardState extends State<GoodsInward> {
                 ),
               ),
               SizedBox(height: 13.h,),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(text: "     Docid ", weight: FontWeight.w500, color: Colors.black)),
-              SizedBox(height: 7.5.h,),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Text('    Doc ID:',
+                    style: GoogleFonts.dmSans(fontWeight: FontWeight.w500, fontSize: 16)),
+              ),
+              const SizedBox(height: 10),
               Container(
                 height: height/15.2.h,
                 width: width/1.13.w,
                 decoration: BoxDecoration(
                     color: Colors.grey.shade200,
                     border: Border.all(
-                      color: Colors.grey.shade500,
+                        color: Colors.grey.shade500
                     ),
                     borderRadius: BorderRadius.circular(6.r)
                 ),
@@ -240,10 +420,10 @@ class _GoodsInwardState extends State<GoodsInward> {
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade500,
+                        color: Colors.black,
                       ),
                       prefixIcon:  Icon(
-                        Icons.fact_check,
+                        Icons.security_update_good_rounded,
                         color: Colors.grey.shade700,
                         size: 17.5,
                       ),
@@ -252,41 +432,58 @@ class _GoodsInwardState extends State<GoodsInward> {
                   ),
                 ),
               ),
-              SizedBox(height: 14.5.h,),
+          SizedBox(height: 14.5.h,),
               const Align(
                   alignment: Alignment.topLeft,
                   child: MyText(text: "     Po/Dc No ", weight: FontWeight.w500, color: Colors.black)),
               SizedBox(height: 7.5.h,),
-              Container(
-                height: height/15.2.h,
-                width: width/1.13.w,
-                decoration: BoxDecoration(
-                    border: Border.all(
-                        color: Colors.grey.shade500
-                    ),
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(6.r)
-                ),
-                child: TextFormField(
-                  controller: podc,
-                  style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
+          Container(
+            height: height / 15.2.h,
+            width: width / 1.13.w,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade500),
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(6.r),
+            ),
+            child: DropdownSearch<String>(
+              popupProps: PopupProps.dialog(
+                showSearchBox: true,
+                searchFieldProps: TextFieldProps(
                   decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon:  Icon(
-                        Icons.pattern,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none
+                    hintText: "Search Po/Dc No",
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                   ),
                 ),
               ),
+              items: docIds
+                  .where((doc) => doc is Map<String, dynamic> && doc['DOCID'] != null)
+                  .map<String>((doc) => doc['DOCID'].toString())
+                  .toList(),
+              selectedItem: selectedDocId, // Use a separate variable to track selection
+              dropdownDecoratorProps: DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  prefixIcon: Icon(
+                    Icons.pattern,
+                    color: Colors.grey.shade700,
+                    size: 17.5,
+                  ),
+                  hintText: "",
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  selectedDocId = value ?? ''; // Store the selected value
+                  podc.text = value ?? ''; // Also update the controller if needed
+                  if (value != null) {
+                    fillFields(value);
+                  }
+                });
+              },
+            ),
+          ),
+
               SizedBox(height: 14.5..h,),
               const Align(
                   alignment: Alignment.topLeft,
@@ -303,7 +500,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: gst,
+                  controller: gstController,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
                       labelText: "",
@@ -338,7 +535,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: type,
+                  controller: typeController,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
                       labelText: "",
@@ -373,7 +570,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: party,
+                  controller: partyNameController,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
                       labelText: "",
@@ -411,7 +608,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                           borderRadius: BorderRadius.circular(6.r)
                       ),
                       child: TextFormField(
-                        controller: dc,
+                        controller: dcNo,
                         style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                         decoration: InputDecoration(
                             labelText: "",
