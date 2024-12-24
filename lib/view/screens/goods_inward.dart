@@ -107,9 +107,25 @@ class _GoodsInwardState extends State<GoodsInward> {
 
                  /// Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
-    final url = Uri.parse('http://192.168.1.8:8080/db/gate_gst_get_api.php');
+    // Retrieve dynamic URL components from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    // Check if configuration is missing
+    if (serverIp.isEmpty || port.isEmpty) {
+      debugPrint('Error: Server IP or port is not configured.');
+      return;
+    }
+
+    // Construct the dynamic API endpoint
+    final String url = 'http://$serverIp:$port/db/gate_gst_get_api.php';
+
+    debugPrint('Dynamic URL: $url');
+
     try {
-      final response = await http.get(url);
+      // Make the GET request
+      final response = await http.get(Uri.parse(url));
       debugPrint('Response Status: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
@@ -130,6 +146,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       debugPrint('Error fetching data: $error');
     }
   }
+
 
 
   void fillFields(String docId) {
@@ -165,6 +182,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
+    final username = prefs.getString('username') ?? ''; // Retrieve the username
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -203,9 +221,9 @@ class _GoodsInwardState extends State<GoodsInward> {
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
-      "USERNAME": "eagleate",
+      "USERNAME": username,
       "MODIFIEDON": formattedDate,
-      "CREATEDBY": "eagleate",
+      "CREATEDBY": username,
       "CREATEDON": formattedDate,
       "WKID": "",
       "APP_LEVEL": "1",
@@ -368,7 +386,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         //     Get.back();
         //   },
         //     child: Icon(Icons.arrow_back_ios,color: Colors.black,)),
-        title: const Subhead(text: "Goods Inward", weight: FontWeight.w500, color: Colors.black,),
+        title: const Subhead(text: "Gate Inward", weight: FontWeight.w500, color: Colors.black,),
         centerTitle: true,
         toolbarHeight: 70.h,
         backgroundColor: const Color(0xfff1f2f4),
@@ -720,6 +738,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                   ),
                 ),
               ),
+              SizedBox(height: 14.5..h),
               const Align(
                   alignment: Alignment.topLeft,
                   child: MyText(text: "     Grn qty ", weight: FontWeight.w500, color: Colors.black)),
@@ -735,7 +754,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  controller: typeController,
+                  controller: delQty,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
                       labelText: "",

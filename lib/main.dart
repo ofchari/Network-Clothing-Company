@@ -1,3 +1,4 @@
+import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -25,12 +26,11 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             useMaterial3: true,
           ),
-          home: const FormIp()
-          // AnimatedSplashScreen(
-          //     splash: Image.asset("assets/ncc.png"),
-          //     splashIconSize: 200,
-          //     duration: 2000,
-          //     nextScreen: Dashboard())
+          home: AnimatedSplashScreen(
+              splash: Image.asset("assets/ncc.png"),
+              splashIconSize: 200,
+              duration: 2000,
+              nextScreen: const FormIp())
         );
       },
     );

@@ -126,7 +126,7 @@ class _DashboardState extends State<Dashboard> {
                           color: Colors.brown.shade400,
                           borderRadius: BorderRadius.circular(30.r)
                       ),
-                      child: Center(child: Text("Goods \n Inwards",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
+                      child: Center(child: Text("Gate \n Inwards",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
                     ),
                   ),
                   SizedBox(width: 5.w,),
@@ -141,7 +141,7 @@ class _DashboardState extends State<Dashboard> {
                           color: Colors.green.shade100,
                           borderRadius: BorderRadius.circular(30.r)
                       ),
-                      child: Center(child: Text("Goods \n Outwards",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.black)),)),
+                      child: Center(child: Text("Gate \n Outwards",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.black)),)),
                     ),
                   )
                 ],

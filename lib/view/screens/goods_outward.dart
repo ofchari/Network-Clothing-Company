@@ -27,6 +27,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   late String usCode;
   late int orderNumber;
   bool isEditable = false;
+  bool _isSnackBarShown = false; // Track if snackbar is already shown
   // final _dateController = TextEditingController();
   final _dcNoController = TextEditingController();
   final _dcDateController = TextEditingController();
@@ -92,35 +93,66 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final JJFORMNO = TextEditingController();      // DUPCHK1
 
   // Method to fetch data from API and populate fields
+// Method to fetch data from API and populate fields
   Future<void> fetchAndPopulateData(String dcNo) async {
-    final url = Uri.parse('http://192.168.1.8:8080/db/outwarddc_view_get_api.php');
+    // Retrieve dynamic URL components from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    // Check if configuration is missing
+    if (serverIp.isEmpty || port.isEmpty) {
+      if (!_isSnackBarShown) {
+        _isSnackBarShown = true; // Prevent showing snackbar multiple times
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Server IP and port are not configured. Please set them in the settings.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Construct the dynamic API endpoint
+    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php';
+    debugPrint('Dynamic URL: $url');
+
     try {
-      final response = await http.get(url);
+      // Make the GET request
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final record = data.firstWhere((item) => item['DOCID'] == dcNo, orElse: () => null);
+
         if (record != null) {
           setState(() {
             _dcDateController.text = record['DOCDATE'] ?? '';
             _partyController.text = record['PARTYID'] ?? '';
             _delQtyController.text = record['TOTQTY']?.toString() ?? '';
+            _isSnackBarShown = false; // Reset flag on success
           });
-        } else {
+        } else if (!_isSnackBarShown) {
+          _isSnackBarShown = true; // Prevent showing snackbar multiple times
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('No record found for DC No: $dcNo')),
           );
         }
-      } else {
+      } else if (!_isSnackBarShown) {
+        _isSnackBarShown = true; // Prevent showing snackbar multiple times
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to fetch data: ${response.statusCode}')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching data: $e')),
-      );
+      if (!_isSnackBarShown) {
+        _isSnackBarShown = true; // Prevent showing snackbar multiple times
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching data: $e')),
+        );
+      }
     }
   }
+
                /// Load card details ///
   Future<void> _loadUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
@@ -140,6 +172,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
+    final username = prefs.getString('username') ?? ''; // Retrieve the username
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -176,10 +209,10 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
-      "USERNAME": "eagleate",
-      "MODIFIEDON": "2024-12-01 12:00:00",
-      "CREATEDBY": "eagleate",
-      "CREATEDON": "2024-12-01 12:00:00",
+      "USERNAME": username,
+      "MODIFIEDON": formattedDate,
+      "CREATEDBY": username,
+      "CREATEDON": formattedDate,
       "WKID": "",
       "APP_LEVEL": "1",
       "APP_DESC": "1",
@@ -190,7 +223,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "DCNO": _dcNoController.text,
       "STIME": "12:00 PM",
       "PARTY": party1.text,  // Fix: Access the text property
-      "DELQTY": "100.5",
+      "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
       "STMUSER": stmUser.text,
       "REMARKS": remarks.text,
@@ -201,7 +234,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "DCDATE": _dcDateController.text,  // Fix: Access the text property
       "RECID": recId.text,
       "ENAME": eName.text,
-      "USERID": "eagleate",
+      "USERID": username,
       "FINYEAR": "2024-2025",
       "DOCMAXNO": docMaxNo.text,
       "DPREFIX": dPrefix.text,
@@ -332,7 +365,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       backgroundColor: const Color(0xfff1f2f4),
       appBar: AppBar(
         title: const Subhead(
-          text: "Goods Outward",
+          text: "Gate Outward",
           weight: FontWeight.w500,
           color: Colors.black,
         ),
@@ -395,6 +428,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   color: Colors.black,
                 ),
               ),
+              SizedBox(height: 7.5.h),
               Container(
                 height: height / 15.h,
                 width: width / 1.13.w,
@@ -434,54 +468,81 @@ class _GoodsOutwardState extends State<GoodsOutward> {
               const Align(
                 alignment: Alignment.topLeft,
                 child: MyText(
-                  text: "     Dc No ",
+                  text: "   Dc No ",
                   weight: FontWeight.w500,
                   color: Colors.black,
                 ),
               ),
               SizedBox(height: 7.5.h),
               // Updated TextFormField widget:
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  border: Border.all(
-                    color: Colors.grey.shade500,
+              Padding(
+                padding:  const EdgeInsets.all(8.0),
+                child: Container(
+                  height: height / 15.h,
+                  width: width / 1.13.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(
+                      color: Colors.grey.shade500,
+                    ),
+                    borderRadius: BorderRadius.circular(6.r),
                   ),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  controller: _dcNoController,
-                  onChanged: (value) {
-                    if (value.isNotEmpty) {
-                      fetchAndPopulateData(value);
-                    }
-                  },
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: "",
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.now_wallpaper_rounded,
-                      color: Colors.grey.shade700,
-                      size: 17.5,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                    border: InputBorder.none,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _dcNoController,
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              fetchAndPopulateData(value);
+                            }
+                          },
+                          style: GoogleFonts.dmSans(
+                            textStyle: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          decoration: InputDecoration(
+                            labelText: "   ",
+                            labelStyle: GoogleFonts.sora(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 5.h),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.grey.shade700,
+                          size: 20,
+                        ),
+                        onPressed: () async {
+                          // Navigate to the barcode scanner screen
+                          final scannedCode = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
+                          );
+                
+                          // Populate the TextFormField with the scanned code
+                          if (scannedCode != null && scannedCode is String) {
+                            setState(() {
+                              _dcNoController.text = scannedCode;
+                              fetchAndPopulateData(scannedCode);
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
+
               SizedBox(height: 13.h),
               const Align(
                 alignment: Alignment.topLeft,
@@ -634,10 +695,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   ],
           ),
         ),
-
-        SizedBox(height: 15.h),
+              SizedBox(height: 15.h),
               GestureDetector(
-                onTap: (){
+                onTap: () {
                   MobileDocument(context);
                 },
                 child: Buttons(
