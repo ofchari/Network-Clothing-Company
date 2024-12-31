@@ -132,49 +132,89 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
                  ///  Get Api's method for Doc Id's //
 
+
   Future<void> fetchDocIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final serverIp = prefs.getString('serverIp') ?? '';
-    final port = prefs.getString('port') ?? '';
-
-    if (serverIp.isEmpty || port.isEmpty) {
-      debugPrint('Error: Server IP or port is not configured.');
-      return;
-    }
-
-    final String url = 'http://$serverIp:$port/db/gate_gst_get_api.php';
-    debugPrint('Dynamic URL: $url');
+    const String url = 'http://192.168.1.155/db/gate_gst_get_api.php';
 
     try {
       final response = await http.get(Uri.parse(url));
-      debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data is List) {
-          final box = Hive.box('docIdsBox');
+        var rawData = response.body.trim(); // Trim whitespace and newlines
+        // debugPrint('Raw Response Body: $rawData');
+        // Clean malformed JSON if necessary
+        rawData = rawData.replaceAll(RegExp(r'\]\['), ','); // Replace `][` with `,`
 
-          // Store data as JSON strings
-          final List<String> jsonStringList = data.map((doc) => json.encode(doc)).toList();
-          await box.put('docIds', jsonStringList);
-
-          setState(() {
-            docIds = List<Map<String, dynamic>>.from(data);
-            filteredDocIds = docIds; // Initially, show all data
-          });
-
-          debugPrint('Fetched and Stored DocIDs: $docIds');
-        } else {
-          debugPrint('Unexpected data format: $data');
+        try {
+          // Attempt to parse the cleaned JSON
+          final data = json.decode(rawData);
+          if (data is List) {
+            setState(() {
+              docIds = List<Map<String, dynamic>>.from(data); // Store entire dataset
+              filteredDocIds = docIds; // Initially display all data
+            });
+            debugPrint('Fetched ${docIds.length} records successfully.');
+          } else {
+            debugPrint('Unexpected data format. Expected a List, got: $data');
+          }
+        } catch (jsonError) {
+          debugPrint('JSON Parsing Error after cleaning: $jsonError');
         }
       } else {
-        debugPrint('Failed to fetch data. Status: ${response.statusCode}');
+        debugPrint('Failed to fetch data. Status Code: ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
       }
-    } catch (error) {
-      debugPrint('Error fetching data: $error');
+    } catch (networkError) {
+      debugPrint('Network Error: $networkError');
     }
   }
+
+
+
+  //
+  // Future<void> fetchDocIds() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final serverIp = prefs.getString('serverIp') ?? '';
+  //   final port = prefs.getString('port') ?? '';
+  //
+  //   if (serverIp.isEmpty || port.isEmpty) {
+  //     debugPrint('Error: Server IP or port is not configured.');
+  //     return;
+  //   }
+  //
+  //   final String url = 'http://$serverIp:$port/db/gate_gst_get_api.php';
+  //   debugPrint('Dynamic URL: $url');
+  //
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+  //     debugPrint('Response Status: ${response.statusCode}');
+  //     debugPrint('Response Body: ${response.body}');
+  //
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       if (data is List) {
+  //         final box = Hive.box('docIdsBox');
+  //
+  //         // Store data as JSON strings
+  //         final List<String> jsonStringList = data.map((doc) => json.encode(doc)).toList();
+  //         await box.put('docIds', jsonStringList);
+  //
+  //         setState(() {
+  //           docIds = List<Map<String, dynamic>>.from(data);
+  //           filteredDocIds = docIds; // Initially, show all data
+  //         });
+  //
+  //         debugPrint('Fetched and Stored DocIDs: $docIds');
+  //       } else {
+  //         debugPrint('Unexpected data format: $data');
+  //       }
+  //     } else {
+  //       debugPrint('Failed to fetch data. Status: ${response.statusCode}');
+  //     }
+  //   } catch (error) {
+  //     debugPrint('Error fetching data: $error');
+  //   }
+  // }
 
 
 
@@ -228,12 +268,19 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
 
+  TextEditingController docIdController = TextEditingController();
+
   Future<void> _loadUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
-    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;  // Start from 1 for the user
+    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    setState(() {});
+    String newId = 'us/24/13587${orderNumber + 1}';
+    prefs.setString('newUserId_$usCode', newId);
+
+    setState(() {
+      docIdController.text = newId;  // Update the controller's text with the new DocId
+    });
   }
 
 
@@ -271,7 +318,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     // Increment the order number
     await prefs.setInt('orderNumber_$usCode', orderNumber + 1);
 
-    final dcNo = "$usCode/24/I/$orderNumber";
+    // final dcNo = "$usCode/24/I/$orderNumber";
     // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/dbconnect.php';
 
@@ -316,7 +363,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "ATIME": "", // Extracted text
       "ITIME": "", // Extracted text
       "FINYEAR": "2024-2025", // Extracted text
-      "DOCID": "$usCode/24/$orderNumber", // This is already a string
+      "DOCID": docIdController.text, // This is already a string
       "SUPP": supp.text, // Extracted text
       // "JOBCLOSEDBY": jobClosedBy.text, // Extracted text
       // "JCLOSEDON": jClosedOn.text, // Extracted text
@@ -329,10 +376,10 @@ class _GoodsInwardState extends State<GoodsInward> {
       "RECID": recId.text, // Extracted text
       "DOCMAXNO": docMaxNo.text, // Extracted text
       "DPREFIX": dPrefix.text, // Extracted text
-      "DOCID1": "$usCode/24/$orderNumber", // Extracted text
+      "DOCID1": docIdController.text, // Extracted text
       "USCODE": ussCode.text, // Extracted text
       "DELREQ": delReq.text, // Extracted text
-      "DOCIDOLD": selectedDocId, // Extracted text
+      "DOCIDOLD": searchController.text, // Extracted text
       "PARTY1": partyNameController.text, // Extracted text
       "DUPCHK1": partyNameController.text, // Extracted text
     };
@@ -362,6 +409,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         //// Clear input fields
         party1.clear();
         delQty.clear();
+        docIdController.clear();
         stmUser.clear();
         remarks.clear();
         eName.clear();
@@ -533,10 +581,10 @@ class _GoodsInwardState extends State<GoodsInward> {
                     borderRadius: BorderRadius.circular(6.r)
                 ),
                 child: TextFormField(
-                  // controller: docid,
+                  // controller: docIdController,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
-                      labelText: "$usCode/24/$orderNumber",
+                      labelText: docIdController.text,
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -567,6 +615,39 @@ class _GoodsInwardState extends State<GoodsInward> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child:
+                // TextFormField(
+                //   controller: searchController,
+                //   decoration: InputDecoration(
+                //     prefixIcon: Icon(
+                //       Icons.search,
+                //       color: Colors.grey.shade700,
+                //       size: 20,
+                //     ),
+                //     hintText: "Type to search Po/Dc No",
+                //     border: InputBorder.none,
+                //     contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                //   ),
+                //   onChanged: (text) {
+                //     setState(() {
+                //       if (text.isEmpty) {
+                //         filteredDocIds = [];  // Clear suggestions when text is empty
+                //       } else {
+                //         final box = Hive.box('docIdsBox');
+                //         final List<String> storedDocIds = box.get('docIds', defaultValue: []);
+                //
+                //         // Convert JSON strings back to maps
+                //         final List<Map<String, dynamic>> deserializedDocIds = storedDocIds
+                //             .map((docString) => json.decode(docString) as Map<String, dynamic>)
+                //             .toList();
+                //
+                //         // Filter data based on user input
+                //         filteredDocIds = deserializedDocIds.where((doc) {
+                //           return doc['DOCID'].toString().toLowerCase().contains(text.toLowerCase());
+                //         }).toList();
+                //       }
+                //     });
+                //   },
+                // )
                 TextFormField(
                   controller: searchController,
                   decoration: InputDecoration(
@@ -576,30 +657,76 @@ class _GoodsInwardState extends State<GoodsInward> {
                       size: 20,
                     ),
                     hintText: "Type to search Po/Dc No",
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
                   ),
                   onChanged: (text) {
                     setState(() {
                       if (text.isEmpty) {
-                        filteredDocIds = [];  // Clear suggestions when text is empty
+                        filteredDocIds = []; // Clear suggestions when text is empty
                       } else {
-                        final box = Hive.box('docIdsBox');
-                        final List<String> storedDocIds = box.get('docIds', defaultValue: []);
-
-                        // Convert JSON strings back to maps
-                        final List<Map<String, dynamic>> deserializedDocIds = storedDocIds
-                            .map((docString) => json.decode(docString) as Map<String, dynamic>)
-                            .toList();
-
                         // Filter data based on user input
-                        filteredDocIds = deserializedDocIds.where((doc) {
-                          return doc['DOCID'].toString().toLowerCase().contains(text.toLowerCase());
+                        filteredDocIds = docIds.where((doc) {
+                          final docId = doc['DOCID']?.toString() ?? '';
+                          return docId.toLowerCase().contains(text.toLowerCase());
                         }).toList();
                       }
                     });
                   },
                 )
+
+                // Column(
+                //   children: [
+                //     Padding(
+                //       padding: const EdgeInsets.all(8.0),
+                //       child: TextFormField(
+                //         controller: searchController,
+                //         decoration: InputDecoration(
+                //           prefixIcon: Icon(
+                //             Icons.search,
+                //             color: Colors.grey.shade700,
+                //             size: 20,
+                //           ),
+                //           hintText: "Type to search Po/Dc No",
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(10),
+                //             borderSide: BorderSide(color: Colors.grey.shade300),
+                //           ),
+                //           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                //         ),
+                //         onChanged: (text) {
+                //           debugPrint('Fetched ${docIds.length} records successfully.');
+                //           setState(() {
+                //             debugPrint('Fetched ${docIds.length} records successfully.');
+                //             if (text.isEmpty) {
+                //               filteredDocIds = docIds; // Show all data when search is empty
+                //             } else {
+                //               filteredDocIds = docIds.where((doc) {
+                //                 final docId = doc['DOCID']?.toString() ?? '';
+                //                 return docId.toLowerCase().contains(text.toLowerCase());
+                //               }).toList();
+                //             }
+                //           });
+                //         },
+                //       ),
+                //     ),
+                //     Expanded(
+                //       child: ListView.builder(
+                //         itemCount: filteredDocIds.length,
+                //         itemBuilder: (context, index) {
+                //           return ListTile(
+                //             title: Text(filteredDocIds[index]['DOCID'] ?? 'Unknown'),
+                //             subtitle: Text(filteredDocIds[index].toString()),
+                //           );
+                //         },
+                //       ),
+                //     ),
+                //   ],
+                // ),
+
               ),
               const SizedBox(height: 10),
 // Suggestions List - show only when there is text input and filtered results
@@ -933,7 +1060,7 @@ class _GoodsInwardState extends State<GoodsInward> {
               SizedBox(height: 15.h,),
           ]),
         ),
-      ),
+      )
     );
   }
 }

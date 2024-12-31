@@ -16,7 +16,7 @@ Future<List<Data>> fetchInward() async {
   final response = await http.get(Uri.parse(apiUrl));
 
   if (response.statusCode == 200) {
-    List<dynamic> outwards = jsonDecode(response.body)['data'];
+    List<dynamic> outwards = jsonDecode(response.body);
     return outwards.map((e) => Data.fromJson(e)).toList();
   } else {
     throw Exception("Error status ${response.statusCode}");

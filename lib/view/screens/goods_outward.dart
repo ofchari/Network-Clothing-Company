@@ -121,9 +121,10 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
     // Encode the dcNo to handle special characters
     final encodedDcNo = Uri.encodeComponent(dcNo);
+    print(encodedDcNo);
 
     // Append the encoded dcNo to the URL as a query parameter
-    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php?DOCID=$encodedDcNo';
+    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php?docid=$encodedDcNo';
 
     try {
       final response = await http.get(Uri.parse(url));
