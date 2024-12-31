@@ -45,6 +45,10 @@ dependencies:
   shared_preferences: ^2.3.4
   dropdown_search: ^5.0.2
   mobile_scanner: ^6.0.2
+  device_info_plus: ^11.2.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

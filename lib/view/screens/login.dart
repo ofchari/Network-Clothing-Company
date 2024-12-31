@@ -27,7 +27,7 @@ class _LoginState extends State<Login> {
           children: [
             SizedBox(height: 50.h,),
             FutureBuilder(
-                future: fetchOutward(),
+                future: fetchInward(),
                 builder: (context,snapshot){
                   if(snapshot.connectionState == ConnectionState.waiting){
                     return const CircularProgressIndicator();

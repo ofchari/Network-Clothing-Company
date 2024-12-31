@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -25,19 +28,24 @@ class _GoodsInwardState extends State<GoodsInward> {
   late double width;
   late String usCode;
   late int orderNumber;
-  List<dynamic> docIds = [];
+  String deviceId = '';
+  List<Map<String, dynamic>> docIds = [];
+  List<Map<String, dynamic>> filteredDocIds = [];
   String? selectedDocId;
+  bool isLoading = false;
+  ScrollController scrollController = ScrollController();
+  TextEditingController searchController = TextEditingController();
   TextEditingController gstController = TextEditingController();
   TextEditingController typeController = TextEditingController();
   TextEditingController partyNameController = TextEditingController();
   final _dateController = TextEditingController();
-  String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+  String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
 
   // Get the current date and time
   DateTime now = DateTime.now();
 
 // Convert to ISO 8601 string (common format for APIs)
-  String currentTime = DateTime.now().toIso8601String();
+  String currentTime = DateFormat('HH.mm.ss').format(DateTime.now());
 
   // print(currentTime) // Output: e.g., 2024-12-18T14:35:20.123Z
            /// Controller for post method //
@@ -103,28 +111,41 @@ class _GoodsInwardState extends State<GoodsInward> {
     super.initState();
     fetchDocIds();
     _loadUserDetails();
+    fetchDeviceId();
   }
 
-                 /// Get Api's method for Doc Id's //
+                /// Showing IMEI Number ///
+
+  Future<void> fetchDeviceId() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+
+      setState(() {
+        deviceId = androidInfo.id ?? 'Unknown Device ID'; // Retrieve Android ID
+      });
+    } catch (e) {
+      setState(() {
+        deviceId = 'Failed to retrieve Device ID';
+      });
+    }
+  }
+                 ///  Get Api's method for Doc Id's //
+
   Future<void> fetchDocIds() async {
-    // Retrieve dynamic URL components from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
 
-    // Check if configuration is missing
     if (serverIp.isEmpty || port.isEmpty) {
       debugPrint('Error: Server IP or port is not configured.');
       return;
     }
 
-    // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/gate_gst_get_api.php';
-
     debugPrint('Dynamic URL: $url');
 
     try {
-      // Make the GET request
       final response = await http.get(Uri.parse(url));
       debugPrint('Response Status: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
@@ -132,10 +153,18 @@ class _GoodsInwardState extends State<GoodsInward> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {
+          final box = Hive.box('docIdsBox');
+
+          // Store data as JSON strings
+          final List<String> jsonStringList = data.map((doc) => json.encode(doc)).toList();
+          await box.put('docIds', jsonStringList);
+
           setState(() {
-            docIds = data; // Ensure the type is List<dynamic>
+            docIds = List<Map<String, dynamic>>.from(data);
+            filteredDocIds = docIds; // Initially, show all data
           });
-          debugPrint('Fetched DocIDs: $docIds');
+
+          debugPrint('Fetched and Stored DocIDs: $docIds');
         } else {
           debugPrint('Unexpected data format: $data');
         }
@@ -149,19 +178,55 @@ class _GoodsInwardState extends State<GoodsInward> {
 
 
 
-  void fillFields(String docId) {
-    final selectedData = docIds.firstWhere((doc) => doc['DOCID'] == docId, orElse: () => null);
-    if (selectedData != null) {
-      setState(() {
-        gstController.text = selectedData['GST'] ?? '';
-        typeController.text = selectedData['PTYPE'] ?? '';
-        partyNameController.text = selectedData['PARTYID'] ?? '';
-      });
-      debugPrint('Selected Data: $selectedData');
-    } else {
-      debugPrint('No matching DOCID found for: $docId');
+              /// Pass the Docid and get the other details ///
+
+  Future<void> fetchDocDetails(String docId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    if (serverIp.isEmpty || port.isEmpty) {
+      debugPrint('Error: Server IP or port is not configured.');
+      return;
+    }
+
+    final String url = 'http://$serverIp:$port/db/gate_gst_doc_get_api.php?DOCID=$docId';
+    debugPrint('Dynamic URL for details: $url');
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+      print(response.contentLength);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        debugPrint('Fetched data: $data'); // Print the response to verify the structure
+
+        // Check if the data is a list (it should be a list of maps)
+        if (data is List) {
+          final docDetails = data.isNotEmpty ? data[0] : null;
+
+          if (docDetails != null && docDetails is Map<String, dynamic>) {
+            setState(() {
+              gstController.text = docDetails['GST'] ?? ''; // Fill GST field
+              typeController.text = docDetails['PTYPE'] ?? ''; // Fill Type field
+              partyNameController.text = docDetails['PARTYID'] ?? ''; // Fill Party Name field
+            });
+          } else {
+            debugPrint('Unexpected data format: $docDetails');
+          }
+        } else {
+          debugPrint('Expected a List but got: $data');
+        }
+      } else {
+        debugPrint('Failed to fetch details. Status: ${response.statusCode}');
+      }
+    } catch (error) {
+      debugPrint('Error fetching details: $error');
     }
   }
+
 
   Future<void> _loadUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
@@ -217,59 +282,59 @@ class _GoodsInwardState extends State<GoodsInward> {
 
     // Set up the data for the API request
     final data = {
-      "GATEINMASID": "1.3277E+13",
+      // "GATEINMASID": "",
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
-      "USERNAME": username,
-      "MODIFIEDON": formattedDate,
-      "CREATEDBY": username,
-      "CREATEDON": formattedDate,
-      "WKID": "",
-      "APP_LEVEL": "1",
-      "APP_DESC": "1",
-      "APP_SLEVEL": "",
-      "CANCELREMARKS": "",
-      "WFROLES": "",
-      "DOCDATE": docDate.text, // Extracted text
-      "DELCTRL": delCtrl.text, // Extracted text
-      "DEPT": dept.text, // Extracted text
-      "DCNO": "$usCode/24/I/$orderNumber", // Extracted text
-      "STIME": stime.text, // Extracted text
-      "PARTY": partyNameController.text, // Extracted text
+      // "USERNAME": username,
+      // "MODIFIEDON": formattedDate,
+      // "CREATEDBY": username,
+      "CREATEDON": "",
+      // "WKID": "",
+      // "APP_LEVEL": "1",
+      // "APP_DESC": "1",
+      // "APP_SLEVEL": "",
+      // "CANCELREMARKS": "",
+      // "WFROLES": "",
+      // "DOCDATE": formattedDate, // Extracted text
+      "DELCTRL": "U Don't Have rights to delete", // Extracted text
+      // "DEPT": dept.text, // Extracted text
+      "DCNO": "", // Extracted text
+      "STIME": "", // Extracted text
+      "PARTY": party1.text, // Extracted text
       "DELQTY": delQty.text, // Extracted text
-      "DUPCHK": dupChk.text, // Extracted text
+      // "DUPCHK": dupChk.text, // Extracted text
       "JOBCLOSE": "NO",
-      "STMUSER": stmUser.text, // Extracted text
+      "STMUSER": deviceId, // Extracted text
       "REMARKS": remarks.text, // Extracted text
       "ENAME": eName.text, // Extracted text
-      "DCDATE": _dateController.text, // Extracted text
+      // "DCDATE": _dateController.text, // Extracted text
       "DINWNO": dinWno.text, // Extracted text
-      "DINWON": dinWon.text, // Extracted text
+      // "DINWON": dinWon.text, // Extracted text
       "DINWBY": dinWby.text, // Extracted text
       "TODEPT": toDept.text, // Extracted text
-      "ATIME": aTime.text, // Extracted text
-      "ITIME": iTime.text, // Extracted text
-      "FINYEAR": finYear.text, // Extracted text
-      "DOCID": docid.text, // This is already a string
+      "ATIME": "", // Extracted text
+      "ITIME": "", // Extracted text
+      "FINYEAR": "2024-2025", // Extracted text
+      "DOCID": "$usCode/24/$orderNumber", // This is already a string
       "SUPP": supp.text, // Extracted text
-      "JOBCLOSEDBY": jobClosedBy.text, // Extracted text
-      "JCLOSEDON": jClosedOn.text, // Extracted text
+      // "JOBCLOSEDBY": jobClosedBy.text, // Extracted text
+      // "JCLOSEDON": jClosedOn.text, // Extracted text
       "USERID": userId.text, // Extracted text
       "NPARTY": nParty.text, // Extracted text
       "PODCCHK": podcChk.text, // Extracted text
       "GST": gstController.text, // Extracted text
       "GSTYN": gstYn.text, // Extracted text
-      "PODC": selectedDocId, // Extracted text
+      "PODC": "", // Extracted text
       "RECID": recId.text, // Extracted text
       "DOCMAXNO": docMaxNo.text, // Extracted text
       "DPREFIX": dPrefix.text, // Extracted text
-      "DOCID1": docId1.text, // Extracted text
+      "DOCID1": "$usCode/24/$orderNumber", // Extracted text
       "USCODE": ussCode.text, // Extracted text
       "DELREQ": delReq.text, // Extracted text
-      "DOCIDOLD": docIdOld.text, // Extracted text
-      "PARTY1": party1.text, // Extracted text
-      "DUPCHK1": dupChk1.text, // Extracted text
+      "DOCIDOLD": selectedDocId, // Extracted text
+      "PARTY1": partyNameController.text, // Extracted text
+      "DUPCHK1": partyNameController.text, // Extracted text
     };
 
 
@@ -294,9 +359,31 @@ class _GoodsInwardState extends State<GoodsInward> {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const Dashboard()),
-        );
+        //// Clear input fields
+        party1.clear();
+        delQty.clear();
+        stmUser.clear();
+        remarks.clear();
+        eName.clear();
+        dinWno.clear();
+        dinWby.clear();
+        toDept.clear();
+        supp.clear();
+        userId.clear();
+        nParty.clear();
+        podcChk.clear();
+        gstController.clear();
+        gstYn.clear();
+        recId.clear();
+        docMaxNo.clear();
+        dPrefix.clear();
+        ussCode.clear();
+        delReq.clear();
+        partyNameController.clear();
+        selectedDocId = ''; // Reset other non-controller variables
+        // Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(builder: (context) => const Dashboard()),
+        // );
       }
       // Handle server-side validation errors
       else if (response.statusCode == 417) {
@@ -449,7 +536,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                   // controller: docid,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
-                      labelText: "$usCode/24/I/$orderNumber",
+                      labelText: "$usCode/24/$orderNumber",
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -470,52 +557,81 @@ class _GoodsInwardState extends State<GoodsInward> {
                   alignment: Alignment.topLeft,
                   child: MyText(text: "     Po/Dc No ", weight: FontWeight.w500, color: Colors.black)),
               SizedBox(height: 7.5.h,),
-          Container(
-            height: height / 15.2.h,
-            width: width / 1.13.w,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade500),
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(6.r),
-            ),
-            child: DropdownSearch<String>(
-              popupProps: const PopupProps.dialog(
-                showSearchBox: true,
-                searchFieldProps: TextFieldProps(
+              const SizedBox(height: 10),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  border: Border.all(color: Colors.grey.shade500),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child:
+                TextFormField(
+                  controller: searchController,
                   decoration: InputDecoration(
-                    hintText: "Search Po/Dc No",
-                    contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey.shade700,
+                      size: 20,
+                    ),
+                    hintText: "Type to search Po/Dc No",
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                  onChanged: (text) {
+                    setState(() {
+                      if (text.isEmpty) {
+                        filteredDocIds = [];  // Clear suggestions when text is empty
+                      } else {
+                        final box = Hive.box('docIdsBox');
+                        final List<String> storedDocIds = box.get('docIds', defaultValue: []);
+
+                        // Convert JSON strings back to maps
+                        final List<Map<String, dynamic>> deserializedDocIds = storedDocIds
+                            .map((docString) => json.decode(docString) as Map<String, dynamic>)
+                            .toList();
+
+                        // Filter data based on user input
+                        filteredDocIds = deserializedDocIds.where((doc) {
+                          return doc['DOCID'].toString().toLowerCase().contains(text.toLowerCase());
+                        }).toList();
+                      }
+                    });
+                  },
+                )
+              ),
+              const SizedBox(height: 10),
+// Suggestions List - show only when there is text input and filtered results
+              // Suggestions List - show only when there is text input and filtered results
+              if (searchController.text.isNotEmpty && filteredDocIds.isNotEmpty)
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: ListView.builder(
+                    itemCount: filteredDocIds.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == filteredDocIds.length) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final doc = filteredDocIds[index];
+                      return ListTile(
+                        title: Text(doc['DOCID']),
+                        onTap: () async {
+                          searchController.text = doc['DOCID'];  // Update the TextFormField with the selected DOCID
+                          await fetchDocDetails(doc['DOCID']);  // Fetch details for the selected DocID
+                          setState(() {
+                            filteredDocIds = []; // Clear the suggestions list explicitly
+                          });
+                        },
+                      );
+                    },
                   ),
                 ),
-              ),
-              items: docIds
-                  .where((doc) => doc is Map<String, dynamic> && doc['DOCID'] != null)
-                  .map<String>((doc) => doc['DOCID'].toString())
-                  .toList(),
-              selectedItem: selectedDocId, // Use a separate variable to track selection
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  prefixIcon: Icon(
-                    Icons.pattern,
-                    color: Colors.grey.shade700,
-                    size: 17.5,
-                  ),
-                  hintText: "",
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  selectedDocId = value ?? ''; // Store the selected value
-                  podc.text = value ?? ''; // Also update the controller if needed
-                  if (value != null) {
-                    fillFields(value);
-                  }
-                });
-              },
-            ),
-          ),
 
               SizedBox(height: 14.5..h,),
               const Align(
@@ -680,7 +796,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                               lastDate: DateTime(2100),
                             );
                             if (pickedDate != null) {
-                              _dateController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+                              _dateController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
                             }
                           },
                         style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
@@ -722,7 +838,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                   readOnly: true,
                   style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
                   decoration: InputDecoration(
-                      labelText: formattedDate,
+                      labelText: currentTime,
                       labelStyle: GoogleFonts.sora(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -773,15 +889,49 @@ class _GoodsInwardState extends State<GoodsInward> {
                   ),
                 ),
               ),
+              SizedBox(height: 14.5..h),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(text: "     Stm User ", weight: FontWeight.w500, color: Colors.black)),
+              SizedBox(height: 7.5.h,),
+              Container(
+                height: height/15.2.h,
+                width: width/1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(
+                        color: Colors.grey.shade500
+                    ),
+                    borderRadius: BorderRadius.circular(6.r)
+                ),
+                child: TextFormField(
+                  initialValue: deviceId,
+                  style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon:  Icon(
+                        Icons.merge_type,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none
+                  ),
+                ),
+              ),
               SizedBox(height: 15.h,),
               GestureDetector(
                 onTap: (){
                   MobileDocument(context);
                 },
-                  child: Buttons(height: height/18.h, width: width/2, radius: BorderRadius.circular(7), color: Colors.blue, text: "Submit")),
+                  child: Buttons(height: height/18.h, width: width/2.w, radius: BorderRadius.circular(7), color: Colors.blue, text: "Submit")),
               SizedBox(height: 15.h,),
-            ],
-          ),
+          ]),
         ),
       ),
     );

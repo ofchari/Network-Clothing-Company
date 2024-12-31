@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -26,6 +27,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   late double width;
   late String usCode;
   late int orderNumber;
+  String deviceId = '';
   bool isEditable = false;
   bool _isSnackBarShown = false; // Track if snackbar is already shown
   // final _dateController = TextEditingController();
@@ -34,7 +36,13 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final _partyController = TextEditingController();
   final _delQtyController = TextEditingController();
 
-  String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+  String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+
+  // Get the current date and time
+  DateTime now = DateTime.now();
+
+// Convert to ISO 8601 string (common format for APIs)
+  String currentTime = DateTime.now().toIso8601String();
 
   /// Controller for post method //
   final gateInMasId = TextEditingController();  // GATEINMASID
@@ -62,7 +70,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final jobClose = TextEditingController();     // JOBCLOSE
   final stmUser = TextEditingController();      // STMUSER
   final remarks = TextEditingController();      // REMARKS
-  final eName = TextEditingController();        // ENAME
+  // final eName = TextEditingController();        // ENAME
   final dcDate = TextEditingController();       // DCDATE
   final dinWno = TextEditingController();       // DINWNO
   final dinWon = TextEditingController();       // DINWON
@@ -93,17 +101,15 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final JJFORMNO = TextEditingController();      // DUPCHK1
 
   // Method to fetch data from API and populate fields
-// Method to fetch data from API and populate fields
+
   Future<void> fetchAndPopulateData(String dcNo) async {
-    // Retrieve dynamic URL components from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
 
-    // Check if configuration is missing
     if (serverIp.isEmpty || port.isEmpty) {
       if (!_isSnackBarShown) {
-        _isSnackBarShown = true; // Prevent showing snackbar multiple times
+        _isSnackBarShown = true;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Server IP and port are not configured. Please set them in the settings.'),
@@ -113,45 +119,60 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       return;
     }
 
-    // Construct the dynamic API endpoint
-    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php';
-    debugPrint('Dynamic URL: $url');
+    // Encode the dcNo to handle special characters
+    final encodedDcNo = Uri.encodeComponent(dcNo);
+
+    // Append the encoded dcNo to the URL as a query parameter
+    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php?DOCID=$encodedDcNo';
 
     try {
-      // Make the GET request
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final record = data.firstWhere((item) => item['DOCID'] == dcNo, orElse: () => null);
+        final decodedResponse = jsonDecode(response.body);
 
-        if (record != null) {
-          setState(() {
-            _dcDateController.text = record['DOCDATE'] ?? '';
-            _partyController.text = record['PARTYID'] ?? '';
-            _delQtyController.text = record['TOTQTY']?.toString() ?? '';
-            _isSnackBarShown = false; // Reset flag on success
-          });
-        } else if (!_isSnackBarShown) {
-          _isSnackBarShown = true; // Prevent showing snackbar multiple times
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No record found for DC No: $dcNo')),
+        // Ensure the data is a List before calling `firstWhere`
+        if (decodedResponse is List) {
+          final record = decodedResponse.firstWhere(
+                (item) => item['DOCID'] == dcNo,
+            orElse: () => null,
           );
+
+          if (record != null) {
+            setState(() {
+              _dcNoController.text = dcNo; // Set the scanned code
+              _dcDateController.text = record['DOCDATE'] ?? '';
+              _partyController.text = record['PARTYID'] ?? '';
+              _delQtyController.text = record['TOTQTY']?.toString() ?? '';
+              _isSnackBarShown = false;
+            });
+          } else {
+            showError('No record found for DC No: $dcNo');
+          }
+        } else if (decodedResponse is Map) {
+          // If the response is a single record (Map), check its DOCID
+          if (decodedResponse['DOCID'] == dcNo) {
+            setState(() {
+              _dcNoController.text = dcNo; // Set the scanned code
+              _dcDateController.text = decodedResponse['DOCDATE'] ?? '';
+              _partyController.text = decodedResponse['PARTYID'] ?? '';
+              _delQtyController.text = decodedResponse['TOTQTY']?.toString() ?? '';
+              _isSnackBarShown = false;
+            });
+          } else {
+            showError('No matching record found for DC No: $dcNo');
+          }
+        } else {
+          showError('Unexpected data format from server.');
         }
-      } else if (!_isSnackBarShown) {
-        _isSnackBarShown = true; // Prevent showing snackbar multiple times
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch data: ${response.statusCode}')),
-        );
+      } else {
+        showError('Failed to fetch data: ${response.statusCode}');
       }
     } catch (e) {
-      if (!_isSnackBarShown) {
-        _isSnackBarShown = true; // Prevent showing snackbar multiple times
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching data: $e')),
-        );
-      }
+      showError('Error fetching data: $e');
     }
   }
+
+
 
                /// Load card details ///
   Future<void> _loadUserDetails() async {
@@ -162,7 +183,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     setState(() {});
   }
 
-                /// Post method for this Goods Outward //
+  /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
     // Allow self-signed certificates for development purposes
     HttpClient client = HttpClient();
@@ -205,7 +226,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
     // Fix: Create a single Map instead of a Set containing a Map
     final data = {
-      "GATEMASID": "13244000005249",
+      // "GATEMASID": "13244000005260",
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
@@ -219,26 +240,26 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "APP_SLEVEL": "",
       "CANCELREMARKS": "",
       "WFROLES": "",
-      "DOCDATE": "2024-12-01",
+      "DOCDATE": formattedDate,
       "DCNO": _dcNoController.text,
-      "STIME": "12:00 PM",
-      "PARTY": party1.text,  // Fix: Access the text property
+      "STIME": formattedDate,
+      "PARTY": _partyController.text,  // Fix: Access the text property
       "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
-      "STMUSER": stmUser.text,
+      "STMUSER": deviceId,
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
-      "DCNOS": "DcNoo",  // Fix: Access the text property
-      "ATIME": formattedDate,
-      "ITIME": formattedDate,
+      "DCNOS": "",  // Fix: Access the text property
+      "ATIME": "",
+      "ITIME": "",
       "DCDATE": _dcDateController.text,  // Fix: Access the text property
       "RECID": recId.text,
-      "ENAME": eName.text,
+      // "ENAME": eName.text,
       "USERID": username,
       "FINYEAR": "2024-2025",
-      "DOCMAXNO": docMaxNo.text,
+      "DOCMAXNO": orderNumber,
       "DPREFIX": dPrefix.text,
-      "DOCID": docId1.text,
+      "DOCID": "$usCode/24/$orderNumber",
       "USCODE": ussCode.text
     };
 
@@ -263,9 +284,19 @@ class _GoodsOutwardState extends State<GoodsOutward> {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const Dashboard()),
-        );
+        _dcNoController.clear();
+        _partyController.clear();
+        _delQtyController.clear();
+        stmUser.clear();
+        remarks.clear();
+        JJFORMNO.clear();
+        _dcDateController.clear();
+        recId.clear();
+        dPrefix.clear();
+        ussCode.clear();
+        // Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(builder: (context) => const Dashboard()),
+        // );
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
         final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
@@ -318,21 +349,81 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
+  Future<void> fetchDeviceId() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
-  void openMobileScanner() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const BarcodeScannerScreen(),
-      ),
-    );
-
-    if (result != null && result is String) {
       setState(() {
-        _dcNoController.text = result; // Populate scanned value in TextFormField.
+        deviceId = androidInfo.id ?? 'Unknown Device ID'; // Retrieve Android ID
+      });
+    } catch (e) {
+      setState(() {
+        deviceId = 'Failed to retrieve Device ID';
       });
     }
   }
+
+
+  Future<void> openMobileScanner() async {
+    try {
+      final scannedCode = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
+      );
+
+      if (scannedCode != null && scannedCode is String) {
+        // Clear previous data first
+        setState(() {
+          _dcDateController.clear();
+          _partyController.clear();
+          _delQtyController.clear();
+          _dcNoController.text = scannedCode; // Set the confirmed DC number
+        });
+
+        // Then fetch and populate other data
+        await fetchAndPopulateData(scannedCode);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      if (!_isSnackBarShown) {
+        _isSnackBarShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error scanning barcode: $e'),
+            duration: const Duration(seconds: 2),
+            onVisible: () {
+              Future.delayed(const Duration(seconds: 2), () {
+                _isSnackBarShown = false;
+              });
+            },
+          ),
+        );
+      }
+    }
+  }
+
+
+  void showError(String message) {
+    if (!_isSnackBarShown) {
+      _isSnackBarShown = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
+
+  @override
+  void dispose() {
+    _dcNoController.dispose();
+    _dcDateController.dispose();
+    _partyController.dispose();
+    _delQtyController.dispose();
+    super.dispose();
+  }
+
 
   @override
   void initState() {
@@ -340,6 +431,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     super.initState();
     fetchAndPopulateData;
     _loadUserDetails();
+    fetchDeviceId();
   }
 
   @override
@@ -448,7 +540,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                     ),
                   ),
                   decoration: InputDecoration(
-                    labelText: "$usCode/24/I/$orderNumber",
+                    labelText: "$usCode/24/$orderNumber",
                     labelStyle: GoogleFonts.sora(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w500,
@@ -476,7 +568,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
               SizedBox(height: 7.5.h),
               // Updated TextFormField widget:
               Padding(
-                padding:  const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Container(
                   height: height / 15.h,
                   width: width / 1.13.w,
@@ -492,11 +584,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                       Expanded(
                         child: TextFormField(
                           controller: _dcNoController,
-                          onChanged: (value) {
-                            if (value.isNotEmpty) {
-                              fetchAndPopulateData(value);
-                            }
-                          },
+                          readOnly: true,
                           style: GoogleFonts.dmSans(
                             textStyle: TextStyle(
                               fontSize: 15.sp,
@@ -505,14 +593,13 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                             ),
                           ),
                           decoration: InputDecoration(
-                            labelText: "   ",
-                            labelStyle: GoogleFonts.sora(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(vertical: 5.h),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                             border: InputBorder.none,
+                            hintText: "Click camera to scan DC Number",
+                            hintStyle: GoogleFonts.dmSans(
+                              fontSize: 13.sp,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                       ),
@@ -522,21 +609,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                           color: Colors.grey.shade700,
                           size: 20,
                         ),
-                        onPressed: () async {
-                          // Navigate to the barcode scanner screen
-                          final scannedCode = await Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
-                          );
-                
-                          // Populate the TextFormField with the scanned code
-                          if (scannedCode != null && scannedCode is String) {
-                            setState(() {
-                              _dcNoController.text = scannedCode;
-                              fetchAndPopulateData(scannedCode);
-                            });
-                          }
-                        },
+                        onPressed: () => openMobileScanner(),
                       ),
                     ],
                   ),
@@ -695,6 +768,52 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   ],
           ),
         ),
+              SizedBox(height: 13.h),
+              const Align(
+                alignment: Alignment.topLeft,
+                child: MyText(
+                  text: "    Stm User ",
+                  weight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 7.5.h),
+              Container(
+                height: height / 15.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade500),
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: TextFormField(
+                  // controller: stmUser,
+                  initialValue: deviceId,
+                  readOnly: true,
+                  style: GoogleFonts.dmSans(
+                    textStyle: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                  decoration: InputDecoration(
+                    labelText: "",
+                    labelStyle: GoogleFonts.sora(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.dashboard_customize_rounded,
+                      color: Colors.black,
+                      size: 17.5,
+                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
               SizedBox(height: 15.h),
               GestureDetector(
                 onTap: () {

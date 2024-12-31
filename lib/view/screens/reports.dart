@@ -40,7 +40,7 @@ class _ReportsState extends State<Reports> {
   Widget _smallBuildLayout() {
     return Scaffold(
       appBar: AppBar(
-        title: const Subhead(text: "Reports", weight: FontWeight.w500, color: Colors.white),
+        title: const Subhead(text: "GateIn Reports", weight: FontWeight.w500, color: Colors.white),
         centerTitle: true,
         backgroundColor: Colors.blue,
       ),
@@ -49,7 +49,7 @@ class _ReportsState extends State<Reports> {
         child: Column(
           children: [
             FutureBuilder(
-              future: fetchOutward(),
+              future: fetchInward(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

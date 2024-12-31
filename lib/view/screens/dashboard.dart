@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ncc/view/screens/goods_inward.dart';
 import 'package:ncc/view/screens/goods_outward.dart';
 import 'package:ncc/view/screens/reports.dart';
+import 'package:ncc/view/screens/reportsout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form.dart';
@@ -148,20 +149,44 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
             SizedBox(height: 5.h,),
-            GestureDetector(
-              onTap: (){
-                Get.to(const Reports());
-              },
-              child: Container(
-                height: height/7.h,
-                width: width/1.09.w,
-                decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(30.r)
-                ),
-                child: Center(child: Text("Reports",style: GoogleFonts.outfit(textStyle: TextStyle(fontSize: 24.3.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
+            Padding(
+              padding:  const EdgeInsets.only(right: 11.0,left: 11.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: (){
+                      Get.to(const Reports());
+                    },
+                    child: Container(
+                      height: height/4.7.h,
+                      width: width/2.15.w,
+                      decoration: BoxDecoration(
+                          color: Colors.brown.shade400,
+                          borderRadius: BorderRadius.circular(30.r)
+                      ),
+                      child: Center(child: Text("GateIn \n Reports",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.white)),)),
+                    ),
+                  ),
+                  SizedBox(width: 5.w,),
+                  GestureDetector(
+                    onTap: (){
+                      Get.to(const ReportsOut());
+                    },
+                    child: Container(
+                      height: height/4.7.h,
+                      width: width/2.15.w,
+                      decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(30.r)
+                      ),
+                      child: Center(child: Text("GateOut \n Reports",style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 23.sp,fontWeight: FontWeight.w500,color: Colors.black)),)),
+                    ),
+                  )
+                ],
               ),
-            )
+            ),
+
+
           ],
         ),
       ),
