@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:ncc/model/json_model/outward_get_json.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../model/json_model/Inward_get_json.dart';
 
 Future<List<Datumm>> fetchOutward() async {
   final prefs = await SharedPreferences.getInstance();

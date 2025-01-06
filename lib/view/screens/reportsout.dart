@@ -5,7 +5,6 @@ import 'package:ncc/services/goods_outward_api.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
 import '../../model/json_model/outward_get_json.dart';
-import '../../services/goods_Inward_api.dart';
 
 class ReportsOut extends StatefulWidget {
   const ReportsOut({super.key});

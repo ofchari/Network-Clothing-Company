@@ -13,7 +13,6 @@ import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'dashboard.dart';
 
 class GoodsOutward extends StatefulWidget {
   const GoodsOutward({super.key});
@@ -42,7 +41,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   DateTime now = DateTime.now();
 
 // Convert to ISO 8601 string (common format for APIs)
-  String currentTime = DateTime.now().toIso8601String();
+  String currentTime = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
 
   /// Controller for post method //
   final gateInMasId = TextEditingController();  // GATEINMASID
@@ -175,13 +174,19 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
 
 
-               /// Load card details ///
+  TextEditingController docIdController = TextEditingController();
+
   Future<void> _loadUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
-    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;  // Start from 1 for the user
+    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    setState(() {});
+    String newId = '$usCode/24/13588${orderNumber + 1}';
+    prefs.setString('newUserId_$usCode', newId);
+
+    setState(() {
+      docIdController.text = newId;  // Update the controller's text with the new DocId
+    });
   }
 
   /// Post method for this Goods Outward //
@@ -243,7 +248,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "WFROLES": "",
       "DOCDATE": formattedDate,
       "DCNO": _dcNoController.text,
-      "STIME": formattedDate,
+      "STIME": currentTime,
       "PARTY": _partyController.text,  // Fix: Access the text property
       "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
@@ -253,14 +258,14 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "DCNOS": "",  // Fix: Access the text property
       "ATIME": "",
       "ITIME": "",
-      "DCDATE": _dcDateController.text,  // Fix: Access the text property
+      "DCDATE": _dcDateController.text,// Fix: Access the text property
       "RECID": recId.text,
-      // "ENAME": eName.text,
+      // "ENAME": "18970000000000",
       "USERID": username,
-      "FINYEAR": "2024-2025",
+      "FINYEAR": "24",
       "DOCMAXNO": orderNumber,
       "DPREFIX": dPrefix.text,
-      "DOCID": "$usCode/24/$orderNumber",
+      "DOCID": docIdController.text,
       "USCODE": ussCode.text
     };
 
@@ -295,6 +300,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         recId.clear();
         dPrefix.clear();
         ussCode.clear();
+        docIdController.clear();
         // Navigator.of(context).pushReplacement(
         //   MaterialPageRoute(builder: (context) => const Dashboard()),
         // );
@@ -541,7 +547,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                     ),
                   ),
                   decoration: InputDecoration(
-                    labelText: "$usCode/24/$orderNumber",
+                    labelText: docIdController.text,
                     labelStyle: GoogleFonts.sora(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w500,
@@ -806,7 +812,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                       color: Colors.black,
                     ),
                     prefixIcon: const Icon(
-                      Icons.dashboard_customize_rounded,
+                      Icons.desktop_mac,
                       color: Colors.black,
                       size: 17.5,
                     ),

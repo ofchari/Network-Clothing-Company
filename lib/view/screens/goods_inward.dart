@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart'as http;
@@ -14,7 +13,6 @@ import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dashboard.dart';
 
 class GoodsInward extends StatefulWidget {
   const GoodsInward({super.key});
@@ -39,13 +37,13 @@ class _GoodsInwardState extends State<GoodsInward> {
   TextEditingController typeController = TextEditingController();
   TextEditingController partyNameController = TextEditingController();
   final _dateController = TextEditingController();
-  String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+  String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   // Get the current date and time
   DateTime now = DateTime.now();
 
 // Convert to ISO 8601 string (common format for APIs)
-  String currentTime = DateFormat('HH.mm.ss').format(DateTime.now());
+  String currentTime = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
 
   // print(currentTime) // Output: e.g., 2024-12-18T14:35:20.123Z
            /// Controller for post method //
@@ -131,8 +129,6 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
                  ///  Get Api's method for Doc Id's //
-
-
   Future<void> fetchDocIds() async {
     const String url = 'http://192.168.1.155/db/gate_gst_get_api.php';
 
@@ -170,8 +166,6 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
 
-
-  //
   // Future<void> fetchDocIds() async {
   //   final prefs = await SharedPreferences.getInstance();
   //   final serverIp = prefs.getString('serverIp') ?? '';
@@ -275,7 +269,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
     orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    String newId = 'us/24/13587${orderNumber + 1}';
+    String newId = '$usCode/24/13588${orderNumber + 1}';
     prefs.setString('newUserId_$usCode', newId);
 
     setState(() {
@@ -333,10 +327,10 @@ class _GoodsInwardState extends State<GoodsInward> {
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
-      // "USERNAME": username,
-      // "MODIFIEDON": formattedDate,
-      // "CREATEDBY": username,
-      "CREATEDON": "",
+      "USERNAME": username,
+      "MODIFIEDON": formattedDate+currentTime,
+      "CREATEDBY": username,
+      "CREATEDON": formattedDate+currentTime,
       // "WKID": "",
       // "APP_LEVEL": "1",
       // "APP_DESC": "1",
@@ -345,39 +339,39 @@ class _GoodsInwardState extends State<GoodsInward> {
       // "WFROLES": "",
       // "DOCDATE": formattedDate, // Extracted text
       "DELCTRL": "U Don't Have rights to delete", // Extracted text
-      // "DEPT": dept.text, // Extracted text
-      "DCNO": "", // Extracted text
-      "STIME": "", // Extracted text
+      "DEPT": typeController.text, // Extracted text
+      "DCNO": dcNo.text, // Extracted text
+      "STIME": formattedDate+currentTime, // Extracted text
       "PARTY": party1.text, // Extracted text
       "DELQTY": delQty.text, // Extracted text
       // "DUPCHK": dupChk.text, // Extracted text
       "JOBCLOSE": "NO",
       "STMUSER": deviceId, // Extracted text
       "REMARKS": remarks.text, // Extracted text
-      "ENAME": eName.text, // Extracted text
-      // "DCDATE": _dateController.text, // Extracted text
+      "ENAME": "18970000000000", // Extracted text
+      "DCDATE": _dateController.text, // Extracted text
       "DINWNO": dinWno.text, // Extracted text
       // "DINWON": dinWon.text, // Extracted text
       "DINWBY": dinWby.text, // Extracted text
       "TODEPT": toDept.text, // Extracted text
-      "ATIME": "", // Extracted text
-      "ITIME": "", // Extracted text
-      "FINYEAR": "2024-2025", // Extracted text
+      "ATIME": currentTime, // Extracted text
+      "ITIME": formattedDate+currentTime, // Extracted text
+      "FINYEAR": "24", // Extracted text
       "DOCID": docIdController.text, // This is already a string
       "SUPP": supp.text, // Extracted text
       // "JOBCLOSEDBY": jobClosedBy.text, // Extracted text
       // "JCLOSEDON": jClosedOn.text, // Extracted text
-      "USERID": userId.text, // Extracted text
+      "USERID": username, // Extracted text
       "NPARTY": nParty.text, // Extracted text
       "PODCCHK": podcChk.text, // Extracted text
       "GST": gstController.text, // Extracted text
       "GSTYN": gstYn.text, // Extracted text
-      "PODC": "", // Extracted text
+      "PODC": searchController.text, // Extracted text
       "RECID": recId.text, // Extracted text
-      "DOCMAXNO": docMaxNo.text, // Extracted text
-      "DPREFIX": dPrefix.text, // Extracted text
+      "DOCMAXNO": orderNumber, // Extracted text
+      "DPREFIX": "$usCode/24", // Extracted text
       "DOCID1": docIdController.text, // Extracted text
-      "USCODE": ussCode.text, // Extracted text
+      "USCODE": usCode, // Extracted text
       "DELREQ": delReq.text, // Extracted text
       "DOCIDOLD": searchController.text, // Extracted text
       "PARTY1": partyNameController.text, // Extracted text
@@ -923,7 +917,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                               lastDate: DateTime(2100),
                             );
                             if (pickedDate != null) {
-                              _dateController.text = DateFormat('dd-MM-yyyy').format(pickedDate);
+                              _dateController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
                             }
                           },
                         style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
@@ -1042,7 +1036,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                         color: Colors.black,
                       ),
                       prefixIcon:  Icon(
-                        Icons.merge_type,
+                        Icons.desktop_mac,
                         color: Colors.grey.shade700,
                         size: 17.5,
                       ),
