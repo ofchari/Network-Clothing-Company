@@ -173,7 +173,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   }
 
 
-
   TextEditingController docIdController = TextEditingController();
 
   Future<void> _loadUserDetails() async {
@@ -181,7 +180,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
     orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    String newId = '$usCode/24/13588${orderNumber + 1}';
+    String newId = '$usCode/24/14500${orderNumber + 1}';
     prefs.setString('newUserId_$usCode', newId);
 
     setState(() {
@@ -189,17 +188,28 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     });
   }
 
+  void loadSavedDocId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final docIdKey = 'last_docid_outward_$usCode';
+    final savedDocId = prefs.getString(docIdKey);
+
+    if (savedDocId != null) {
+      setState(() {
+        docIdController.text = savedDocId;
+      });
+    }
+  }
   /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
-    // Allow self-signed certificates for development purposes
     HttpClient client = HttpClient();
     client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
 
-    // Retrieve dynamic URL from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
-    final username = prefs.getString('username') ?? ''; // Retrieve the username
+    final username = prefs.getString('username') ?? '';
+    final outwardOrderKey = 'orderNumber_Outward_$usCode';
+    final storedDcNumbersKey = 'posted_dc_numbers'; // Key for duplicate DC storage
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -217,20 +227,46 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       );
       return;
     }
-    // Increment the order number
-    await prefs.setInt('orderNumber_$usCode', orderNumber + 1);
 
-    final dcNo = "$usCode/24/I/$orderNumber";
+
+    // Retrieve and increment the order number for Goods Outward
+    int outwardOrderNumber = prefs.getInt(outwardOrderKey) ?? 1;
+    final docIdKey = 'last_docid_outward_$usCode';
+    final dcNo = "$usCode/24/O/$outwardOrderNumber";
+
+    // Check for duplicate DC numbers
+    final storedDcNumbers = prefs.getStringList(storedDcNumbersKey) ?? [];
+    final scannedDcNo = _dcNoController.text.trim();
+
+    if (scannedDcNo.isEmpty) {
+      Get.snackbar(
+        "Validation Error",
+        "DC Number cannot be empty. Please scan a valid DC Number.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (storedDcNumbers.contains(scannedDcNo)) {
+      Get.snackbar(
+        "Duplicate Entry",
+        "The DC Number '$scannedDcNo' has already been posted. Please scan a unique DC Number.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/outward_post_api.php';
 
-    // HTTP headers
     final headers = {
       'Content-Type': 'application/json',
     };
 
-    // Fix: Create a single Map instead of a Set containing a Map
     final data = {
       // "GATEMASID": "13244000005260",
       "CANCEL": "F",
@@ -247,7 +283,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "CANCELREMARKS": "",
       "WFROLES": "",
       "DOCDATE": formattedDate,
-      "DCNO": _dcNoController.text,
+      "DCNO": scannedDcNo,
       "STIME": currentTime,
       "PARTY": _partyController.text,  // Fix: Access the text property
       "DELQTY": _delQtyController.text,
@@ -256,14 +292,14 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
       "DCNOS": "",  // Fix: Access the text property
-      "ATIME": "",
-      "ITIME": "",
+      "ATIME": currentTime,
+      "ITIME": formattedDate+currentTime,
       "DCDATE": _dcDateController.text,// Fix: Access the text property
       "RECID": recId.text,
       // "ENAME": "18970000000000",
       "USERID": username,
       "FINYEAR": "24",
-      "DOCMAXNO": orderNumber,
+      "DOCMAXNO": outwardOrderNumber,
       "DPREFIX": dPrefix.text,
       "DOCID": docIdController.text,
       "USCODE": ussCode.text
@@ -273,23 +309,50 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     print('Dynamic URL: $url');
 
     try {
-      // Make the API call
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(data),
       );
 
-      // Rest of the error handling code remains the same...
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Show success snackbar
+        // Save the new DC number to the stored list
+        storedDcNumbers.add(scannedDcNo);
+        await prefs.setStringList(storedDcNumbersKey, storedDcNumbers);
+
+        // Increment the order number and update DocID
+        await prefs.setInt(outwardOrderKey, outwardOrderNumber + 1);
+        final regex = RegExp(r'(\d+)$');
+        final match = regex.firstMatch(docIdController.text.trim());
+
+        if (match != null) {
+          final lastNumber = match.group(0)!;
+          final incrementedNumber = int.parse(lastNumber) + 1;
+          final newDocId = docIdController.text.trim().replaceFirst(lastNumber, incrementedNumber.toString());
+
+          await prefs.setString(docIdKey, newDocId);
+          docIdController.text = newDocId;
+        }
+
         Get.snackbar(
           "Success",
-          "Document posted successfully!",
+          "Goods Outward Document posted successfully!",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
+
+        // Clear input fields
+        // _dcNoController.clear();
+        // _partyController.clear();
+        // _delQtyController.clear();
+        // stmUser.clear();
+        // remarks.clear();
+        // JJFORMNO.clear();
+        // _dcDateController.clear();
+        // recId.clear();
+        // dPrefix.clear();
+        // ussCode.clear();
         _dcNoController.clear();
         _partyController.clear();
         _delQtyController.clear();
@@ -301,9 +364,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         dPrefix.clear();
         ussCode.clear();
         docIdController.clear();
-        // Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (context) => const Dashboard()),
-        // );
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
         final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
@@ -324,19 +384,16 @@ class _GoodsOutwardState extends State<GoodsOutward> {
           ),
         );
       } else {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Request failed with status: ${response.statusCode}'),
-            actions: [
-              ElevatedButton(
-                child: const Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
+        String responseBody = response.body;
+        Get.snackbar(
+          "Error",
+          "Request failed with status: ${response.statusCode}\n\nResponse: $responseBody",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
+        print('Error: ${response.statusCode}');
+        print('Response Body: $responseBody');
       }
     } catch (error) {
       print('Exception: $error');
@@ -355,6 +412,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       );
     }
   }
+
+
 
   Future<void> fetchDeviceId() async {
     try {
@@ -439,6 +498,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     fetchAndPopulateData;
     _loadUserDetails();
     fetchDeviceId();
+    loadSavedDocId();
   }
 
   @override
@@ -773,8 +833,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                       },
                     ),
                   ],
-          ),
-        ),
+                ),
+              ),
               SizedBox(height: 13.h),
               const Align(
                 alignment: Alignment.topLeft,
@@ -842,4 +902,3 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     );
   }
 }
-
