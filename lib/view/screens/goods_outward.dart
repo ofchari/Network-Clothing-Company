@@ -180,7 +180,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
     orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    String newId = '$usCode/24/14500${orderNumber + 1}';
+    String newId = '$usCode/24/15000${orderNumber + 1}';
     prefs.setString('newUserId_$usCode', newId);
 
     setState(() {
