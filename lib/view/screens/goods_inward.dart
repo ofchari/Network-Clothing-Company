@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+// import 'package:hive/hive.dart';
 import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -168,50 +168,6 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
 
-  // Future<void> fetchDocIds() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final serverIp = prefs.getString('serverIp') ?? '';
-  //   final port = prefs.getString('port') ?? '';
-  //
-  //   if (serverIp.isEmpty || port.isEmpty) {
-  //     debugPrint('Error: Server IP or port is not configured.');
-  //     return;
-  //   }
-  //
-  //   final String url = 'http://$serverIp:$port/db/gate_gst_get_api.php';
-  //   debugPrint('Dynamic URL: $url');
-  //
-  //   try {
-  //     final response = await http.get(Uri.parse(url));
-  //     debugPrint('Response Status: ${response.statusCode}');
-  //     debugPrint('Response Body: ${response.body}');
-  //
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(response.body);
-  //       if (data is List) {
-  //         final box = Hive.box('docIdsBox');
-  //
-  //         // Store data as JSON strings
-  //         final List<String> jsonStringList = data.map((doc) => json.encode(doc)).toList();
-  //         await box.put('docIds', jsonStringList);
-  //
-  //         setState(() {
-  //           docIds = List<Map<String, dynamic>>.from(data);
-  //           filteredDocIds = docIds; // Initially, show all data
-  //         });
-  //
-  //         debugPrint('Fetched and Stored DocIDs: $docIds');
-  //       } else {
-  //         debugPrint('Unexpected data format: $data');
-  //       }
-  //     } else {
-  //       debugPrint('Failed to fetch data. Status: ${response.statusCode}');
-  //     }
-  //   } catch (error) {
-  //     debugPrint('Error fetching data: $error');
-  //   }
-  // }
-
 
 
   /// Pass the Docid and get the other details ///
@@ -271,7 +227,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
     orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    String newId = '$usCode/24/14500${orderNumber + 1}';
+    String newId = '$usCode/24/17000${orderNumber + 1}';
     prefs.setString('newUserId_$usCode', newId);
 
     setState(() {
@@ -282,7 +238,6 @@ class _GoodsInwardState extends State<GoodsInward> {
     final prefs = await SharedPreferences.getInstance();
     final docIdKey = 'last_docid_inward_$usCode';
     final savedDocId = prefs.getString(docIdKey);
-
     if (savedDocId != null) {
       setState(() {
         docIdController.text = savedDocId;
@@ -290,7 +245,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-   /// Post method for Goods Inward //
+  /// Post method for Goods Inward //
   /// Post method for Goods Inward //
   Future<void> MobileDocument(BuildContext context) async {
     // Allow self-signed certificates for development purposes
@@ -405,7 +360,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "DELREQ": delReq.text,
       "DOCIDOLD": searchController.text,
       "PARTY1": partyNameController.text,
-      "DUPCHK1": "${partyNameController.text}/${dcnumber.text}/24",
+      "DUPCHK1": "${partyNameController.text}${dcnumber.text}/24/",
     };
 
     print('Request Data: $data');
@@ -528,7 +483,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
       height = constraints.maxHeight;
       width = constraints.maxWidth;
-      if(width<=450){
+      if(width<=1000){
         return _smallBuildLayout();
       }
       else{
@@ -643,39 +598,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child:
-                      // TextFormField(
-                      //   controller: searchController,
-                      //   decoration: InputDecoration(
-                      //     prefixIcon: Icon(
-                      //       Icons.search,
-                      //       color: Colors.grey.shade700,
-                      //       size: 20,
-                      //     ),
-                      //     hintText: "Type to search Po/Dc No",
-                      //     border: InputBorder.none,
-                      //     contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                      //   ),
-                      //   onChanged: (text) {
-                      //     setState(() {
-                      //       if (text.isEmpty) {
-                      //         filteredDocIds = [];  // Clear suggestions when text is empty
-                      //       } else {
-                      //         final box = Hive.box('docIdsBox');
-                      //         final List<String> storedDocIds = box.get('docIds', defaultValue: []);
-                      //
-                      //         // Convert JSON strings back to maps
-                      //         final List<Map<String, dynamic>> deserializedDocIds = storedDocIds
-                      //             .map((docString) => json.decode(docString) as Map<String, dynamic>)
-                      //             .toList();
-                      //
-                      //         // Filter data based on user input
-                      //         filteredDocIds = deserializedDocIds.where((doc) {
-                      //           return doc['DOCID'].toString().toLowerCase().contains(text.toLowerCase());
-                      //         }).toList();
-                      //       }
-                      //     });
-                      //   },
-                      // )
+
                       TextFormField(
                         controller: searchController,
                         decoration: InputDecoration(

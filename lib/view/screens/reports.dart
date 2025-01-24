@@ -28,7 +28,7 @@ class _ReportsState extends State<Reports> {
         height = constraints.maxHeight;
         width = constraints.maxWidth;
 
-        if (width <= 450) {
+        if (width <= 1000) {
           return _smallBuildLayout();
         } else {
           return const Text("Please Make sure your device is in portrait view");

@@ -178,13 +178,19 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   Future<void> _loadUserDetails() async {
     final prefs = await SharedPreferences.getInstance();
     usCode = prefs.getString('usCode') ?? 'UNKNOWN';
-    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
 
-    String newId = '$usCode/24/14500${orderNumber + 1}';
-    prefs.setString('newUserId_$usCode', newId);
+    // Get the last used DocID
+    final docIdKey = 'last_docid_outward_$usCode';
+    String? lastDocId = prefs.getString(docIdKey);
+
+    if (lastDocId == null) {
+      // First time - create initial DocID
+      lastDocId = '$usCode/24/170001';  // Or whatever your initial format should be
+      await prefs.setString(docIdKey, lastDocId);
+    }
 
     setState(() {
-      docIdController.text = newId;  // Update the controller's text with the new DocId
+      docIdController.text = lastDocId!;
     });
   }
 
@@ -209,7 +215,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
     final outwardOrderKey = 'orderNumber_Outward_$usCode';
-    final storedDcNumbersKey = 'posted_dc_numbers'; // Key for duplicate DC storage
+    final storedDcNumbersKey = 'posted_dc_numbers';
+    final docIdKey = 'last_docid_outward_$usCode';
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -228,11 +235,21 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       return;
     }
 
+    // Get current DocID and parse its number
+    String currentDocId = docIdController.text;
+    RegExp regex = RegExp(r'(\d+)$');
+    Match? match = regex.firstMatch(currentDocId);
 
-    // Retrieve and increment the order number for Goods Outward
-    int outwardOrderNumber = prefs.getInt(outwardOrderKey) ?? 1;
-    final docIdKey = 'last_docid_outward_$usCode';
-    final dcNo = "$usCode/24/O/$outwardOrderNumber";
+    if (match == null) {
+      Get.snackbar(
+        "Error",
+        "Invalid DocID format",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
 
     // Check for duplicate DC numbers
     final storedDcNumbers = prefs.getStringList(storedDcNumbersKey) ?? [];
@@ -268,7 +285,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     };
 
     final data = {
-      // "GATEMASID": "13244000005260",
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
@@ -285,54 +301,52 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "DOCDATE": formattedDate,
       "DCNO": scannedDcNo,
       "STIME": currentTime,
-      "PARTY": _partyController.text,  // Fix: Access the text property
+      "PARTY": _partyController.text,
       "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
       "STMUSER": deviceId,
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
-      "DCNOS": "",  // Fix: Access the text property
+      "DCNOS": "",
       "ATIME": currentTime,
-      "ITIME": formattedDate+currentTime,
-      "DCDATE": _dcDateController.text,// Fix: Access the text property
+      "ITIME": formattedDate + currentTime,
+      "DCDATE": _dcDateController.text,
       "RECID": recId.text,
-      // "ENAME": "18970000000000",
       "USERID": username,
       "FINYEAR": "24",
-      "DOCMAXNO": outwardOrderNumber,
+      "DOCMAXNO": match.group(1) ?? '', // Use only the last number
       "DPREFIX": dPrefix.text,
       "DOCID": docIdController.text,
       "USCODE": ussCode.text
     };
-
-    print('Request Data: $data');
-    print('Dynamic URL: $url');
-
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(data),
       );
+      print(data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Save the new DC number to the stored list
+        // Store the DC number
         storedDcNumbers.add(scannedDcNo);
         await prefs.setStringList(storedDcNumbersKey, storedDcNumbers);
 
-        // Increment the order number and update DocID
-        await prefs.setInt(outwardOrderKey, outwardOrderNumber + 1);
-        final regex = RegExp(r'(\d+)$');
-        final match = regex.firstMatch(docIdController.text.trim());
+        // Get current number and prefix
+        int currentNumber = int.parse(match.group(1)!);
+        String prefix = currentDocId.substring(0, currentDocId.length - match.group(1)!.length);
 
-        if (match != null) {
-          final lastNumber = match.group(0)!;
-          final incrementedNumber = int.parse(lastNumber) + 1;
-          final newDocId = docIdController.text.trim().replaceFirst(lastNumber, incrementedNumber.toString());
+        // Generate next number
+        int nextNumber = currentNumber + 1;
+        String nextDocId = '$prefix${nextNumber.toString().padLeft(match.group(1)!.length, '0')}';
 
-          await prefs.setString(docIdKey, newDocId);
-          docIdController.text = newDocId;
-        }
+        // Save the new DocID
+        await prefs.setString(docIdKey, nextDocId);
+
+        // Update the controller
+        setState(() {
+          docIdController.text = nextDocId;
+        });
 
         Get.snackbar(
           "Success",
@@ -342,17 +356,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
           colorText: Colors.white,
         );
 
-        // Clear input fields
-        // _dcNoController.clear();
-        // _partyController.clear();
-        // _delQtyController.clear();
-        // stmUser.clear();
-        // remarks.clear();
-        // JJFORMNO.clear();
-        // _dcDateController.clear();
-        // recId.clear();
-        // dPrefix.clear();
-        // ussCode.clear();
+        // Clear all input fields
         _dcNoController.clear();
         _partyController.clear();
         _delQtyController.clear();
@@ -363,7 +367,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         recId.clear();
         dPrefix.clear();
         ussCode.clear();
-        docIdController.clear();
+
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
         final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
@@ -507,7 +511,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       builder: (BuildContext context, BoxConstraints constraints) {
         height = constraints.maxHeight;
         width = constraints.maxWidth;
-        if (width <= 450) {
+        if (width <= 1000) {
           return _smallBuildLayout();
         } else {
           return const Text("Please Make sure Your device is in portrait view");

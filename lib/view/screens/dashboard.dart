@@ -62,7 +62,7 @@ class _DashboardState extends State<Dashboard> {
     return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
       height = constraints.maxHeight;
       width = constraints.maxWidth;
-      if(width<=450){
+      if(width<=1000){
         return _smallBuildLayout();
       }
       else{
@@ -71,7 +71,7 @@ class _DashboardState extends State<Dashboard> {
     },);
   }
   Widget _smallBuildLayout(){
-    /// Define Sizes //
+      /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
@@ -185,8 +185,6 @@ class _DashboardState extends State<Dashboard> {
                 ],
               ),
             ),
-
-
           ],
         ),
       ),
