@@ -115,7 +115,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   }
 
-  /// Showing IMEI Number ///
+               /// Showing IMEI Number ///
 
   Future<void> fetchDeviceId() async {
     try {
@@ -132,7 +132,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-  ///  Get Api's method for Doc Id's //
+              ///  Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
     const String url = 'http://192.168.1.155/db/gate_gst_get_api.php';
 
@@ -1066,7 +1066,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                   SizedBox(height: 15.h,),
                   GestureDetector(
                       onTap: (){
-                        MobileDocument(context);
+
                       },
                       child: Buttons(height: height/18.h, width: width/2.w, radius: BorderRadius.circular(7), color: Colors.blue, text: "Submit")),
                   SizedBox(height: 15.h,),
