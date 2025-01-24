@@ -108,10 +108,11 @@ class _GoodsInwardState extends State<GoodsInward> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    fetchAndSetDocId();
     fetchDocIds();
-    _loadUserDetails();
     fetchDeviceId();
-    loadSavedDocId();
+
+
   }
 
   /// Showing IMEI Number ///
@@ -130,6 +131,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       });
     }
   }
+
   ///  Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
     const String url = 'http://192.168.1.155/db/gate_gst_get_api.php';
@@ -170,7 +172,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
 
 
-  /// Pass the Docid and get the other details ///
+                 /// Pass the Docid and get the other details ///
 
   Future<void> fetchDocDetails(String docId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -222,30 +224,100 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   TextEditingController docIdController = TextEditingController();
 
-  Future<void> _loadUserDetails() async {
+  /// Fetch DOCID and increment it automatically when the screen loads ///
+  Future<void> fetchAndSetDocId() async {
+    // Retrieve the server IP and port from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    usCode = prefs.getString('usCode') ?? 'UNKNOWN';
-    orderNumber = prefs.getInt('orderNumber_$usCode') ?? 1;
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+    final username = prefs.getString('username') ?? ''; // Retrieve the username
 
-    String newId = '$usCode/24/17000${orderNumber + 1}';
-    prefs.setString('newUserId_$usCode', newId);
+    // Check if server IP and port are configured
+    if (serverIp.isEmpty || port.isEmpty) {
+      debugPrint('Error: Server IP or port is not configured.');
+      return;
+    }
 
-    setState(() {
-      docIdController.text = newId;  // Update the controller's text with the new DocId
-    });
-  }
-  void loadSavedDocId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final docIdKey = 'last_docid_inward_$usCode';
-    final savedDocId = prefs.getString(docIdKey);
-    if (savedDocId != null) {
-      setState(() {
-        docIdController.text = savedDocId;
-      });
+    // Construct the dynamic API URL using serverIp and port from SharedPreferences
+    final String url = 'http://$serverIp:$port/db/get_docid_api.php?fields=["DOCID"]&USERNAME=$username';
+
+    try {
+      // Make the GET request to fetch the Doc ID
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print(response.body);
+
+        if (data.isNotEmpty) {
+          final String currentDocId = data[0]['DOCID'];
+
+          // Increment the Doc ID number programmatically
+          String incrementedDocId = incrementDocId(currentDocId);
+
+          // Update the controller with the incremented Doc ID
+          setState(() {
+            docIdController.text = incrementedDocId;
+          });
+        } else {
+          showErrorSnackBar('No DOCID found from the server.');
+        }
+      } else {
+        showErrorSnackBar('Failed to fetch DOCID. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      showErrorSnackBar('Error fetching DOCID: $e');
     }
   }
 
-  /// Post method for Goods Inward //
+
+  // Method to increment the Doc ID number
+  String incrementDocId(String docId) {
+    final RegExp regex = RegExp(r'(\d+)$');
+    final match = regex.firstMatch(docId);
+
+    if (match != null) {
+      String lastNumber = match.group(0)!; // Extract the numeric part
+      int incrementedNumber = int.parse(lastNumber) + 1;
+
+      // Replace the last number with the incremented number
+      return docId.replaceFirst(lastNumber, incrementedNumber.toString());
+    }
+    return docId; // Return the same if no numeric part is found
+  }
+
+  void showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  // Method to extract the numeric part from DocID
+  String extractNumericPart(String docId) {
+    final RegExp regex = RegExp(r'(\d+)$');  // Matches the last numeric part
+    final match = regex.firstMatch(docId);
+
+    if (match != null) {
+      return match.group(0)!;  // Return the matched numeric part
+    }
+
+    return '0';  // Return 0 if no numeric part is found
+  }
+
+  // Method to extract the prefix (e.g., "Eag") from fetchsetdocid
+  String extractUsCode(String fetchAndSetDocId) {
+    final RegExp regex = RegExp(r'^(\w+)(?=/)'); // Matches the prefix before the first "/"
+    final match = regex.firstMatch(fetchAndSetDocId);
+
+    if (match != null) {
+      return match.group(1)!; // Return the extracted prefix
+    }
+    return ''; // Return empty string if no match is found
+  }
+
   /// Post method for Goods Inward //
   Future<void> MobileDocument(BuildContext context) async {
     // Allow self-signed certificates for development purposes
@@ -283,13 +355,11 @@ class _GoodsInwardState extends State<GoodsInward> {
     final storedDuplicates = prefs.getStringList('posted_combinations') ?? [];
     final newCombination = '$party1|$DCNO'; // Corrected missing initialization of newCombination
 
-    // Unique key for Goods Inward orderNumber
-    final inwardOrderKey = 'orderNumber_Inward_$usCode';
-    int inwardOrderNumber = prefs.getInt(inwardOrderKey) ?? 1;
-    final docIdKey = 'last_docid_inward_$usCode';
+    // Extract the numeric part from the current Doc ID (docIdController.text)
+    String lastNumber = extractNumericPart(docIdController.text);
 
-
-
+    // Extract usCode from fetchsetdocid
+    String usCode = extractUsCode(fetchAndSetDocId.toString() ?? '');
 
     if (storedDuplicates.contains(newCombination)) {
       // Show an error message for duplicate entry
@@ -303,8 +373,6 @@ class _GoodsInwardState extends State<GoodsInward> {
       return; // Stop further execution
     }
 
-    // Increment the order number
-    await prefs.setInt(inwardOrderKey, inwardOrderNumber + 1);
 
     // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/db/dbconnect.php';
@@ -314,9 +382,6 @@ class _GoodsInwardState extends State<GoodsInward> {
       'Content-Type': 'application/json',
     };
 
-    // // Get current date and time
-    // final formattedDate = DateTime.now().toString().split(' ')[0]; // YYYY-MM-DD
-    // final currentTime = DateTime.now().toIso8601String(); // Full ISO8601 timestamp
 
     // Set up the data for the API request
     final data = {
@@ -353,7 +418,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "GSTYN": gstYn.text,
       "PODC": searchController.text,
       "RECID": recId.text,
-      "DOCMAXNO": inwardOrderNumber,
+      "DOCMAXNO": lastNumber,
       "DPREFIX": "$usCode/24",
       "DOCID1": docIdController.text,
       "USCODE": usCode,
@@ -389,10 +454,6 @@ class _GoodsInwardState extends State<GoodsInward> {
             String lastNumber = match.group(0)!;
             int incrementedNumber = int.parse(lastNumber) + 1;
             String newDocId = currentDocId.replaceFirst(lastNumber, incrementedNumber.toString());
-
-            // Save both the incremented order number and DocID to SharedPreferences
-            prefs.setInt(inwardOrderKey, inwardOrderNumber + 1);
-            prefs.setString(docIdKey, newDocId);
 
             docIdController.text = newDocId;
           }

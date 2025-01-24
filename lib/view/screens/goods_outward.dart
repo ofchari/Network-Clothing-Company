@@ -175,36 +175,88 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
   TextEditingController docIdController = TextEditingController();
 
-  Future<void> _loadUserDetails() async {
+  // Fetch DOCID and increment it automatically when the screen loads
+  Future<void> fetchAndSetDocId() async {
+    // Retrieve the server IP and port from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    usCode = prefs.getString('usCode') ?? 'UNKNOWN';
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+    final username = prefs.getString('username') ?? ''; // Retrieve the username
 
-    // Get the last used DocID
-    final docIdKey = 'last_docid_outward_$usCode';
-    String? lastDocId = prefs.getString(docIdKey);
-
-    if (lastDocId == null) {
-      // First time - create initial DocID
-      lastDocId = '$usCode/24/170001';  // Or whatever your initial format should be
-      await prefs.setString(docIdKey, lastDocId);
+    // Check if server IP and port are configured
+    if (serverIp.isEmpty || port.isEmpty) {
+      debugPrint('Error: Server IP or port is not configured.');
+      return;
     }
 
-    setState(() {
-      docIdController.text = lastDocId!;
-    });
-  }
+    // Construct the dynamic API URL using serverIp and port from SharedPreferences
+    final String url = 'http://$serverIp:$port/db/get_docid_out_api.php?fields=["DOCID"]&USERNAME=$username';
 
-  void loadSavedDocId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final docIdKey = 'last_docid_outward_$usCode';
-    final savedDocId = prefs.getString(docIdKey);
+    try {
+      // Make the GET request to fetch the Doc ID
+      final response = await http.get(Uri.parse(url));
 
-    if (savedDocId != null) {
-      setState(() {
-        docIdController.text = savedDocId;
-      });
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print(response.body);
+
+        if (data.isNotEmpty) {
+          final String currentDocId = data[0]['DOCID'];
+
+          // Increment the Doc ID number programmatically
+          String incrementedDocId = incrementDocId(currentDocId);
+
+          // Update the controller with the incremented Doc ID
+          setState(() {
+            docIdController.text = incrementedDocId;
+          });
+        } else {
+          showErrorSnackBar('No DOCID found from the server.');
+        }
+      } else {
+        showErrorSnackBar('Failed to fetch DOCID. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      showErrorSnackBar('Error fetching DOCID: $e');
     }
   }
+
+  // Method to increment the Doc ID number
+  String incrementDocId(String docId) {
+    final RegExp regex = RegExp(r'(\d+)$');
+    final match = regex.firstMatch(docId);
+
+    if (match != null) {
+      String lastNumber = match.group(0)!; // Extract the numeric part
+      int incrementedNumber = int.parse(lastNumber) + 1;
+
+      // Replace the last number with the incremented number
+      return docId.replaceFirst(lastNumber, incrementedNumber.toString());
+    }
+    return docId; // Return the same if no numeric part is found
+  }
+
+  void showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  // Method to extract the numeric part from DocID
+  String extractNumericPart(String docId) {
+    final RegExp regex = RegExp(r'(\d+)$');  // Matches the last numeric part
+    final match = regex.firstMatch(docId);
+
+    if (match != null) {
+      return match.group(0)!;  // Return the matched numeric part
+    }
+
+    return '0';  // Return 0 if no numeric part is found
+  }
+
   /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
     HttpClient client = HttpClient();
@@ -214,9 +266,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
-    final outwardOrderKey = 'orderNumber_Outward_$usCode';
+    // final outwardOrderKey = 'orderNumber_Outward_$usCode';
     final storedDcNumbersKey = 'posted_dc_numbers';
-    final docIdKey = 'last_docid_outward_$usCode';
+    // final docIdKey = 'last_docid_outward_$usCode';
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -254,6 +306,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     // Check for duplicate DC numbers
     final storedDcNumbers = prefs.getStringList(storedDcNumbersKey) ?? [];
     final scannedDcNo = _dcNoController.text.trim();
+
+    // Extract the numeric part from the current Doc ID (docIdController.text)
+    String lastNumber = extractNumericPart(docIdController.text);
 
     if (scannedDcNo.isEmpty) {
       Get.snackbar(
@@ -340,8 +395,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         int nextNumber = currentNumber + 1;
         String nextDocId = '$prefix${nextNumber.toString().padLeft(match.group(1)!.length, '0')}';
 
-        // Save the new DocID
-        await prefs.setString(docIdKey, nextDocId);
+        // // Save the new DocID
+        // await prefs.setString(docIdKey, nextDocId);
 
         // Update the controller
         setState(() {
@@ -499,10 +554,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    fetchAndSetDocId();
     fetchAndPopulateData;
-    _loadUserDetails();
     fetchDeviceId();
-    loadSavedDocId();
   }
 
   @override
