@@ -43,6 +43,7 @@ class _GoodsInwardState extends State<GoodsInward> {
   DateTime now = DateTime.now();
 
 // Convert to ISO 8601 string (common format for APIs)
+
   String currentTime = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
 
   // print(currentTime) // Output: e.g., 2024-12-18T14:35:20.123Z
@@ -111,7 +112,6 @@ class _GoodsInwardState extends State<GoodsInward> {
     fetchAndSetDocId();
     fetchDocIds();
     fetchDeviceId();
-
 
   }
 
@@ -382,6 +382,40 @@ class _GoodsInwardState extends State<GoodsInward> {
       'Content-Type': 'application/json',
     };
 
+    setState(() {
+      fetchAndSetDocId();
+        print(docIdController.text);
+
+    });
+    String formattedDate_now = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    String currentTime_now = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
+
+    if (dcnumber.text.trim().isEmpty) {
+      Get.snackbar(
+        snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          "Error", "DC Number cannot be empty");
+      return;
+    }
+
+    if (_dateController.text.trim().isEmpty) {
+      Get.snackbar(
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          "Error", "DC Date is required");
+      return;
+    }
+
+    if (delQty.text.trim().isEmpty || int.tryParse(delQty.text) == null) {
+      Get.snackbar(
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          "Error", "Grn is required");
+      return;
+    }
 
     // Set up the data for the API request
     final data = {
@@ -389,13 +423,13 @@ class _GoodsInwardState extends State<GoodsInward> {
       "SOURCEID": "0",
       "MAPNAME": "",
       "USERNAME": username,
-      "MODIFIEDON": formattedDate + currentTime,
+      "MODIFIEDON": formattedDate_now + currentTime_now,
       "CREATEDBY": username,
-      "CREATEDON": formattedDate + currentTime,
+      "CREATEDON": formattedDate_now + currentTime_now,
       "DELCTRL": "U Don't Have rights to delete",
       "DEPT": typeController.text,
       "DCNO": dcnumber.text,
-      "STIME": formattedDate + currentTime,
+      "STIME": formattedDate_now + currentTime_now,
       "PARTY": party.text,
       "DELQTY": delQty.text,
       "JOBCLOSE": "NO",
@@ -403,11 +437,12 @@ class _GoodsInwardState extends State<GoodsInward> {
       "REMARKS": remarks.text,
       "ENAME": "18970000000000",
       "DCDATE": _dateController.text,
+      "DOCDATE": formattedDate_now,
       "DINWNO": dinWno.text,
       "DINWBY": dinWby.text,
       "TODEPT": toDept.text,
-      "ATIME": currentTime,
-      "ITIME": formattedDate + currentTime,
+      "ATIME": currentTime_now,
+      "ITIME":  formattedDate_now + currentTime_now,
       "FINYEAR": "/24/",
       "DOCID": docIdController.text,
       "SUPP": supp.text,
@@ -456,6 +491,9 @@ class _GoodsInwardState extends State<GoodsInward> {
             String newDocId = currentDocId.replaceFirst(lastNumber, incrementedNumber.toString());
 
             docIdController.text = newDocId;
+
+            // **Send the updated Doc ID back to the server here**
+            fetchAndSetDocId();  // Add this helper method
           }
         });
 
@@ -467,6 +505,9 @@ class _GoodsInwardState extends State<GoodsInward> {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
+
+        // Clear input fields (as you're doing now)
+
 
         // Clear input fields
         // party1.clear();
@@ -490,6 +531,13 @@ class _GoodsInwardState extends State<GoodsInward> {
         dcnumber.clear();
         _dateController.clear();
         selectedDocId = ''; // Reset other non-controller variables
+        docIds.clear();
+        filteredDocIds.clear();
+        //
+        fetchAndSetDocId();
+        fetchDocIds();
+        // fetchDeviceId();
+
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
         final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
@@ -1066,7 +1114,7 @@ class _GoodsInwardState extends State<GoodsInward> {
                   SizedBox(height: 15.h,),
                   GestureDetector(
                       onTap: (){
-
+                        MobileDocument(context);
                       },
                       child: Buttons(height: height/18.h, width: width/2.w, radius: BorderRadius.circular(7), color: Colors.blue, text: "Submit")),
                   SizedBox(height: 15.h,),

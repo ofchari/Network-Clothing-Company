@@ -34,6 +34,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             icon: const Icon(Icons.flash_on),
             onPressed: () => controller?.toggleTorch(),
           ),
+          IconButton(
+            icon: const Icon(Icons.switch_camera),
+            onPressed: () => controller?.switchCamera(),
+          ),
         ],
       ),
       body: MobileScanner(
