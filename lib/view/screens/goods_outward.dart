@@ -257,7 +257,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     return '0';  // Return 0 if no numeric part is found
   }
 
-  /// Post method for this Goods Outward //
+                  /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
     HttpClient client = HttpClient();
     client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
