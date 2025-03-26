@@ -186,7 +186,7 @@ class _FormIpState extends State<FormIp> {
       return;
     }
 
-    final apiUrl = "http://$serverIp:$port/db/user_api.php";
+    final apiUrl = "http://$serverIp:$port/user_api";
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {

@@ -134,24 +134,31 @@ class _GoodsInwardState extends State<GoodsInward> {
 
               ///  Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
-    const String url = 'http://192.168.1.155/db/gate_gst_get_api.php';
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    if (serverIp.isEmpty || port.isEmpty) {
+      debugPrint('Error: Server IP or port is not configured.');
+      return;
+    }
+
+    final String url = 'http://$serverIp:$port/gate_gst_get_api';
+    debugPrint('Fetching from URL: $url');
 
     try {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         var rawData = response.body.trim(); // Trim whitespace and newlines
-        // debugPrint('Raw Response Body: $rawData');
-        // Clean malformed JSON if necessary
-        rawData = rawData.replaceAll(RegExp(r'\]\['), ','); // Replace `][` with `,`
+        rawData = rawData.replaceAll(RegExp(r'\]\['), ','); // Fix malformed JSON
 
         try {
-          // Attempt to parse the cleaned JSON
           final data = json.decode(rawData);
           if (data is List) {
             setState(() {
-              docIds = List<Map<String, dynamic>>.from(data); // Store entire dataset
-              filteredDocIds = docIds; // Initially display all data
+              docIds = List<Map<String, dynamic>>.from(data);
+              filteredDocIds = docIds;
             });
             debugPrint('Fetched ${docIds.length} records successfully.');
           } else {
@@ -172,6 +179,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
 
 
+
                  /// Pass the Docid and get the other details ///
 
   Future<void> fetchDocDetails(String docId) async {
@@ -184,7 +192,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
-    final String url = 'http://$serverIp:$port/db/gate_gst_doc_get_api.php?DOCID=$docId';
+    final String url = 'http://$serverIp:$port/gate_gst_doc_get_api?DOCID=$docId';
     debugPrint('Dynamic URL for details: $url');
 
     try {
@@ -224,7 +232,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   TextEditingController docIdController = TextEditingController();
 
-  /// Fetch DOCID and increment it automatically when the screen loads ///
+              /// Fetch DOCID and increment it automatically when the screen loads ///
   Future<void> fetchAndSetDocId() async {
     // Retrieve the server IP and port from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
@@ -239,7 +247,8 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
 
     // Construct the dynamic API URL using serverIp and port from SharedPreferences
-    final String url = 'http://$serverIp:$port/db/get_docid_api.php?fields=["DOCID"]&USERNAME=$username';
+    // final String url = 'http://$serverIp:$port/db/get_docid_api.php?fields=["DOCID"]&USERNAME=$username';
+    final String url = 'http://$serverIp:$port/get_docid_api?USERNAME=$username';
 
     try {
       // Make the GET request to fetch the Doc ID
@@ -250,7 +259,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         print(response.body);
 
         if (data.isNotEmpty) {
-          final String currentDocId = data[0]['DOCID'];
+          final String currentDocId = data[0]['PODC'];
 
           // Increment the Doc ID number programmatically
           String incrementedDocId = incrementDocId(currentDocId);
@@ -318,7 +327,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     return ''; // Return empty string if no match is found
   }
 
-  /// Post method for Goods Inward //
+                  /// Post method for Goods Inward //
   Future<void> MobileDocument(BuildContext context) async {
     // Allow self-signed certificates for development purposes
     HttpClient client = HttpClient();
@@ -375,7 +384,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
 
     // Construct the dynamic API endpoint
-    final String url = 'http://$serverIp:$port/db/dbconnect.php';
+    final String url = 'http://$serverIp:$port/gatemas_inwards';
 
     // HTTP headers
     final headers = {

@@ -1,0 +1,2 @@
+C:/Users/Hp/ncc/android/app/.cxx/RelWithDebInfo/855t6knw/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Hp/ncc/android/app/.cxx/RelWithDebInfo/855t6knw/x86_64/CMakeFiles/rebuild_cache.dir

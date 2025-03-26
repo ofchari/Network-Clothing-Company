@@ -123,7 +123,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     print(encodedDcNo);
 
     // Append the encoded dcNo to the URL as a query parameter
-    final String url = 'http://$serverIp:$port/db/outwarddc_view_get_api.php?docid=$encodedDcNo';
+    final String url = 'http://$serverIp:$port/outwarddc_view_get_api?docid=$encodedDcNo';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -190,7 +190,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
 
     // Construct the dynamic API URL using serverIp and port from SharedPreferences
-    final String url = 'http://$serverIp:$port/db/get_docid_out_api.php?fields=["DOCID"]&USERNAME=$username';
+    final String url = 'http://$serverIp:$port/get_docid_out_api?USERNAME=$username';
 
     try {
       // Make the GET request to fetch the Doc ID
@@ -201,7 +201,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         print(response.body);
 
         if (data.isNotEmpty) {
-          final String currentDocId = data[0]['DOCID'];
+          final String currentDocId = data[0]['DCNO'];
 
           // Increment the Doc ID number programmatically
           String incrementedDocId = incrementDocId(currentDocId);
@@ -333,7 +333,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
 
     // Construct the dynamic API endpoint
-    final String url = 'http://$serverIp:$port/db/outward_post_api.php';
+    final String url = 'http://$serverIp:$port/outward_post_api';
 
     final headers = {
       'Content-Type': 'application/json',

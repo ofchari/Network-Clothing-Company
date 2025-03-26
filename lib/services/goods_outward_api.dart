@@ -12,7 +12,7 @@ Future<List<Datumm>> fetchOutward() async {
     throw Exception("Server IP or Port not set");
   }
 
-  final apiUrl = "http://$serverIp:$port/db/outward_get_api.php";
+  final apiUrl = "http://$serverIp:$port/outward_get_api";
   final response = await http.get(Uri.parse(apiUrl));
 
   if (response.statusCode == 200) {

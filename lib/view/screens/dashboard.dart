@@ -22,6 +22,7 @@ class _DashboardState extends State<Dashboard> {
   late double height;
   late double width;
 
+
   Future<void> logout() async {
     try {
       // Get SharedPreferences instance
