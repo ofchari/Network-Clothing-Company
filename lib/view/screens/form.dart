@@ -186,7 +186,7 @@ class _FormIpState extends State<FormIp> {
       return;
     }
 
-    final apiUrl = "http://$serverIp:$port/user_api";
+    const apiUrl = "http://192.168.0.29:5122/user_api";
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
@@ -208,7 +208,9 @@ class _FormIpState extends State<FormIp> {
           await prefs.setString('serverIp', serverIp);
           await prefs.setString('port', port);
           await prefs.setString('username', username);
-          await prefs.setString('usCode', usCode);
+          // await prefs.setString('usCode', usCode);
+          await prefs.setString('usCode', usCode.toString());
+
 
           Get.off(() => const Dashboard()); // Navigate to Dashboard, replacing current route
         } else {

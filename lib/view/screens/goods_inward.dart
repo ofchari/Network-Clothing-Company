@@ -177,11 +177,8 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
 
-
-
-
                  /// Pass the Docid and get the other details ///
-
+  ///
   Future<void> fetchDocDetails(String docId) async {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
@@ -516,8 +513,6 @@ class _GoodsInwardState extends State<GoodsInward> {
         );
 
         // Clear input fields (as you're doing now)
-
-
         // Clear input fields
         // party1.clear();
         dcnumber.clear();
@@ -610,7 +605,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     },);
   }
   Widget _smallBuildLayout(){
-    /// Define Sizes //
+               /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
