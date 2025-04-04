@@ -7,13 +7,16 @@ Future<List<Datumm>> fetchOutward() async {
   final prefs = await SharedPreferences.getInstance();
   final serverIp = prefs.getString('serverIp') ?? '';
   final port = prefs.getString('port') ?? '';
+  final username = prefs.getString('username') ?? '';
 
   if (serverIp.isEmpty || port.isEmpty) {
     throw Exception("Server IP or Port not set");
   }
 
-  final apiUrl = "http://$serverIp:$port/outward_get_api";
+  final apiUrl = "http://$serverIp:$port/outward_get_api?username=$username";
   final response = await http.get(Uri.parse(apiUrl));
+  print(response.body);
+  print(response.statusCode);
 
   if (response.statusCode == 200) {
     List<dynamic> gateOut = jsonDecode(response.body);

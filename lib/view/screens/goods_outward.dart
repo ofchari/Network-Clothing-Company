@@ -35,7 +35,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final _partyController = TextEditingController();
   final _delQtyController = TextEditingController();
 
-  String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+  // String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
+  String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
+
 
   // Get the current date and time
   DateTime now = DateTime.now();
@@ -201,7 +203,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         print(response.body);
 
         if (data.isNotEmpty) {
-          final String currentDocId = data[0]['DCNO'];
+          final String currentDocId = data[0]['DOCID'];
 
           // Increment the Doc ID number programmatically
           String incrementedDocId = incrementDocId(currentDocId);
@@ -344,18 +346,18 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "SOURCEID": "0",
       "MAPNAME": "",
       "USERNAME": username,
-      "MODIFIEDON": formattedDate,
+      "MODIFIEDON": formattedDateTime, // Ensuring format: 2025-04-0213:04:14
       "CREATEDBY": username,
-      "CREATEDON": formattedDate,
+      "CREATEDON": formattedDateTime,
       "WKID": "",
       "APP_LEVEL": "1",
       "APP_DESC": "1",
       "APP_SLEVEL": "",
       "CANCELREMARKS": "",
       "WFROLES": "",
-      "DOCDATE": formattedDate,
+      "DOCDATE": formattedDateTime.split('T')[0],  //  // Extract only date part
       "DCNO": scannedDcNo,
-      "STIME": currentTime,
+      "STIME": formattedDateTime,  // Extract only time part
       "PARTY": _partyController.text,
       "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
@@ -363,23 +365,26 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
       "DCNOS": "",
-      "ATIME": currentTime,
-      "ITIME": formattedDate + currentTime,
+      "ATIME": formattedDateTime.substring(11),  // Extract only time part
+      "ITIME": formattedDateTime,
       "DCDATE": _dcDateController.text,
       "RECID": recId.text,
       "USERID": username,
       "FINYEAR": "24",
-      "DOCMAXNO": match.group(1) ?? '', // Use only the last number
+      "DOCMAXNO": match.group(1) ?? '',
       "DPREFIX": dPrefix.text,
       "DOCID": docIdController.text,
       "USCODE": ussCode.text
     };
+
+
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(data),
       );
+      print(response.body);
       print(data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {

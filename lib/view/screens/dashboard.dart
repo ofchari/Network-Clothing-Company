@@ -119,7 +119,7 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   GestureDetector(
                     onTap: (){
-                      Get.to(const GoodsInward());
+                      Get.to( GoodsInward());
                     },
                     child: Container(
                       height: height/4.7.h,
@@ -156,7 +156,7 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   GestureDetector(
                     onTap: (){
-                      Get.to(const Reports());
+                      Get.to( Reports());
                     },
                     child: Container(
                       height: height/4.7.h,

@@ -7,18 +7,23 @@ Future<List<Data>> fetchInward() async {
   final prefs = await SharedPreferences.getInstance();
   final serverIp = prefs.getString('serverIp') ?? '';
   final port = prefs.getString('port') ?? '';
+  final username = prefs.getString('username') ?? ''; // Retrieve the username
 
   if (serverIp.isEmpty || port.isEmpty) {
     throw Exception("Server IP or Port not set");
   }
 
-  final apiUrl = "http://$serverIp:$port/get_api";
+  final apiUrl = "http://$serverIp:$port/get_api?username=$username";
   final response = await http.get(Uri.parse(apiUrl));
 
   if (response.statusCode == 200) {
+    print(response.body);
+    print(response.statusCode);
     List<dynamic> outwards = jsonDecode(response.body);
     return outwards.map((e) => Data.fromJson(e)).toList();
+
   } else {
     throw Exception("Error status ${response.statusCode}");
   }
 }
+

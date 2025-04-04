@@ -152,6 +152,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       if (response.statusCode == 200) {
         var rawData = response.body.trim(); // Trim whitespace and newlines
         rawData = rawData.replaceAll(RegExp(r'\]\['), ','); // Fix malformed JSON
+        print(response.body);
 
         try {
           final data = json.decode(rawData);
@@ -229,6 +230,7 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   TextEditingController docIdController = TextEditingController();
 
+
               /// Fetch DOCID and increment it automatically when the screen loads ///
   Future<void> fetchAndSetDocId() async {
     // Retrieve the server IP and port from SharedPreferences
@@ -256,7 +258,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         print(response.body);
 
         if (data.isNotEmpty) {
-          final String currentDocId = data[0]['PODC'];
+          final String currentDocId = data[0]['DOCID'];
 
           // Increment the Doc ID number programmatically
           String incrementedDocId = incrementDocId(currentDocId);
@@ -264,6 +266,7 @@ class _GoodsInwardState extends State<GoodsInward> {
           // Update the controller with the incremented Doc ID
           setState(() {
             docIdController.text = incrementedDocId;
+            print("DocId from the username passed here $docIdController");
           });
         } else {
           showErrorSnackBar('No DOCID found from the server.');
@@ -325,16 +328,15 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
                   /// Post method for Goods Inward //
+
   Future<void> MobileDocument(BuildContext context) async {
-    // Allow self-signed certificates for development purposes
     HttpClient client = HttpClient();
     client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
 
-    // Retrieve dynamic URL from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
-    final username = prefs.getString('username') ?? ''; // Retrieve the username
+    final username = prefs.getString('username') ?? '';
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -353,22 +355,16 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
-    // Retrieve current PARTY1 and DCNO values
     final party1 = partyNameController.text;
     final DCNO = dcnumber.text;
 
-    // Retrieve the stored duplicates list from SharedPreferences
     final storedDuplicates = prefs.getStringList('posted_combinations') ?? [];
-    final newCombination = '$party1|$DCNO'; // Corrected missing initialization of newCombination
+    final newCombination = '$party1|$DCNO';
 
-    // Extract the numeric part from the current Doc ID (docIdController.text)
     String lastNumber = extractNumericPart(docIdController.text);
-
-    // Extract usCode from fetchsetdocid
     String usCode = extractUsCode(fetchAndSetDocId.toString() ?? '');
 
     if (storedDuplicates.contains(newCombination)) {
-      // Show an error message for duplicate entry
       Get.snackbar(
         "Duplicate Entry",
         "The combination of Party Name and DC Number already exists. Please use unique values.",
@@ -376,66 +372,68 @@ class _GoodsInwardState extends State<GoodsInward> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-      return; // Stop further execution
+      return;
     }
 
-
-    // Construct the dynamic API endpoint
     final String url = 'http://$serverIp:$port/gatemas_inwards';
 
-    // HTTP headers
     final headers = {
       'Content-Type': 'application/json',
     };
 
     setState(() {
       fetchAndSetDocId();
-        print(docIdController.text);
-
+      print(docIdController.text);
     });
-    String formattedDate_now = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    String currentTime_now = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
+
+    String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
+
 
     if (dcnumber.text.trim().isEmpty) {
       Get.snackbar(
+        "Error",
+        "DC Number cannot be empty",
         snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          "Error", "DC Number cannot be empty");
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (_dateController.text.trim().isEmpty) {
       Get.snackbar(
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          "Error", "DC Date is required");
+        "Error",
+        "DC Date is required",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (delQty.text.trim().isEmpty || int.tryParse(delQty.text) == null) {
       Get.snackbar(
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          "Error", "Grn is required");
+        "Error",
+        "Grn is required",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
-    // Set up the data for the API request
     final data = {
       "CANCEL": "F",
       "SOURCEID": "0",
       "MAPNAME": "",
       "USERNAME": username,
-      "MODIFIEDON": formattedDate_now + currentTime_now,
+      "MODIFIEDON": formattedDateTime,
       "CREATEDBY": username,
-      "CREATEDON": formattedDate_now + currentTime_now,
+      "CREATEDON": formattedDateTime,
       "DELCTRL": "U Don't Have rights to delete",
       "DEPT": typeController.text,
       "DCNO": dcnumber.text,
-      "STIME": formattedDate_now + currentTime_now,
+      "STIME": formattedDateTime,
       "PARTY": party.text,
       "DELQTY": delQty.text,
       "JOBCLOSE": "NO",
@@ -443,12 +441,12 @@ class _GoodsInwardState extends State<GoodsInward> {
       "REMARKS": remarks.text,
       "ENAME": "18970000000000",
       "DCDATE": _dateController.text,
-      "DOCDATE": formattedDate_now,
+      "DOCDATE": formattedDateTime.split('T')[0],  // Keeping only date part
       "DINWNO": dinWno.text,
       "DINWBY": dinWby.text,
       "TODEPT": toDept.text,
-      "ATIME": currentTime_now,
-      "ITIME":  formattedDate_now + currentTime_now,
+      "ATIME": formattedDateTime.substring(11),  // Extract only time part
+      "ITIME": formattedDateTime,
       "FINYEAR": "/24/",
       "DOCID": docIdController.text,
       "SUPP": supp.text,
@@ -473,20 +471,18 @@ class _GoodsInwardState extends State<GoodsInward> {
     print('Dynamic URL: $url');
 
     try {
-      // Make the API call
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(data),
       );
+      print(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Add the new combination to the stored list
         storedDuplicates.add(newCombination);
         await prefs.setStringList('posted_combinations', storedDuplicates);
 
         setState(() {
-          // Extract and increment DocID
           String currentDocId = docIdController.text;
           final regex = RegExp(r'(\d+)$');
           final match = regex.firstMatch(currentDocId);
@@ -497,13 +493,10 @@ class _GoodsInwardState extends State<GoodsInward> {
             String newDocId = currentDocId.replaceFirst(lastNumber, incrementedNumber.toString());
 
             docIdController.text = newDocId;
-
-            // **Send the updated Doc ID back to the server here**
-            fetchAndSetDocId();  // Add this helper method
+            fetchAndSetDocId();
           }
         });
 
-        // Show success snackbar
         Get.snackbar(
           "Success",
           "Document posted successfully!",
@@ -512,9 +505,6 @@ class _GoodsInwardState extends State<GoodsInward> {
           colorText: Colors.white,
         );
 
-        // Clear input fields (as you're doing now)
-        // Clear input fields
-        // party1.clear();
         dcnumber.clear();
         delQty.clear();
         typeController.clear();
@@ -534,14 +524,12 @@ class _GoodsInwardState extends State<GoodsInward> {
         searchController.clear();
         dcnumber.clear();
         _dateController.clear();
-        selectedDocId = ''; // Reset other non-controller variables
+        selectedDocId = '';
         docIds.clear();
         filteredDocIds.clear();
-        //
+
         fetchAndSetDocId();
         fetchDocIds();
-        // fetchDeviceId();
-
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
         final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
@@ -590,6 +578,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
