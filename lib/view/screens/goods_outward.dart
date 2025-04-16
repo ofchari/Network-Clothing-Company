@@ -177,7 +177,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
   TextEditingController docIdController = TextEditingController();
 
-  // Fetch DOCID and increment it automatically when the screen loads
+                 // Fetch DOCID and increment it automatically when the screen loads
   Future<void> fetchAndSetDocId() async {
     // Retrieve the server IP and port from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
@@ -223,7 +223,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
-  // Method to increment the Doc ID number
+                /// Method to increment the Doc ID number
   String incrementDocId(String docId) {
     final RegExp regex = RegExp(r'(\d+)$');
     final match = regex.firstMatch(docId);
@@ -268,9 +268,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
-    // final outwardOrderKey = 'orderNumber_Outward_$usCode';
     final storedDcNumbersKey = 'posted_dc_numbers';
-    // final docIdKey = 'last_docid_outward_$usCode';
 
     if (serverIp.isEmpty || port.isEmpty) {
       showDialog(
@@ -289,52 +287,32 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       return;
     }
 
-    // Get current DocID and parse its number
     String currentDocId = docIdController.text;
     RegExp regex = RegExp(r'(\d+)$');
     Match? match = regex.firstMatch(currentDocId);
 
     if (match == null) {
-      Get.snackbar(
-        "Error",
-        "Invalid DocID format",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar("Error", "Invalid DocID format", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    // Check for duplicate DC numbers
     final storedDcNumbers = prefs.getStringList(storedDcNumbersKey) ?? [];
     final scannedDcNo = _dcNoController.text.trim();
-
-    // Extract the numeric part from the current Doc ID (docIdController.text)
     String lastNumber = extractNumericPart(docIdController.text);
 
     if (scannedDcNo.isEmpty) {
-      Get.snackbar(
-        "Validation Error",
-        "DC Number cannot be empty. Please scan a valid DC Number.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar("Validation Error", "DC Number cannot be empty. Please scan a valid DC Number.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
     if (storedDcNumbers.contains(scannedDcNo)) {
-      Get.snackbar(
-        "Duplicate Entry",
-        "The DC Number '$scannedDcNo' has already been posted. Please scan a unique DC Number.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar("Duplicate Entry", "The DC Number '$scannedDcNo' has already been posted. Please scan a unique DC Number.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    // Construct the dynamic API endpoint
+    // ✅ Generate a fresh timestamp for each post
+    String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
+
     final String url = 'http://$serverIp:$port/outward_post_api';
 
     final headers = {
@@ -346,7 +324,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "SOURCEID": "0",
       "MAPNAME": "",
       "USERNAME": username,
-      "MODIFIEDON": formattedDateTime, // Ensuring format: 2025-04-0213:04:14
+      "MODIFIEDON": formattedDateTime,
       "CREATEDBY": username,
       "CREATEDON": formattedDateTime,
       "WKID": "",
@@ -355,9 +333,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "APP_SLEVEL": "",
       "CANCELREMARKS": "",
       "WFROLES": "",
-      "DOCDATE": formattedDateTime.split('T')[0],  //  // Extract only date part
+      "DOCDATE": formattedDateTime.split('T')[0],
       "DCNO": scannedDcNo,
-      "STIME": formattedDateTime,  // Extract only time part
+      "STIME": formattedDateTime,
       "PARTY": _partyController.text,
       "DELQTY": _delQtyController.text,
       "JOBCLOSE": "NO",
@@ -365,7 +343,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
       "DCNOS": "",
-      "ATIME": formattedDateTime.substring(11),  // Extract only time part
+      "ATIME": formattedDateTime.substring(11),
       "ITIME": formattedDateTime,
       "DCDATE": _dcDateController.text,
       "RECID": recId.text,
@@ -377,46 +355,28 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "USCODE": ussCode.text
     };
 
-
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(data),
       );
-      print(response.body);
-      print(data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Store the DC number
         storedDcNumbers.add(scannedDcNo);
         await prefs.setStringList(storedDcNumbersKey, storedDcNumbers);
 
-        // Get current number and prefix
         int currentNumber = int.parse(match.group(1)!);
         String prefix = currentDocId.substring(0, currentDocId.length - match.group(1)!.length);
-
-        // Generate next number
         int nextNumber = currentNumber + 1;
         String nextDocId = '$prefix${nextNumber.toString().padLeft(match.group(1)!.length, '0')}';
 
-        // // Save the new DocID
-        // await prefs.setString(docIdKey, nextDocId);
-
-        // Update the controller
         setState(() {
           docIdController.text = nextDocId;
         });
 
-        Get.snackbar(
-          "Success",
-          "Goods Outward Document posted successfully!",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+        Get.snackbar("Success", "Goods Outward Document posted successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
 
-        // Clear all input fields
         _dcNoController.clear();
         _partyController.clear();
         _delQtyController.clear();
@@ -436,9 +396,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Message'),
-            content: SingleChildScrollView(
-              child: Text(serverMessages),
-            ),
+            content: SingleChildScrollView(child: Text(serverMessages)),
             actions: [
               ElevatedButton(
                 child: const Text('OK'),
@@ -449,18 +407,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         );
       } else {
         String responseBody = response.body;
-        Get.snackbar(
-          "Error",
-          "Request failed with status: ${response.statusCode}\n\nResponse: $responseBody",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        print('Error: ${response.statusCode}');
-        print('Response Body: $responseBody');
+        Get.snackbar("Error", "Request failed with status: ${response.statusCode}\n\nResponse: $responseBody", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
       }
     } catch (error) {
-      print('Exception: $error');
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -476,6 +425,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       );
     }
   }
+
 
 
 
