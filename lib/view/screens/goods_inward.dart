@@ -208,11 +208,14 @@ class _GoodsInwardState extends State<GoodsInward> {
           final docDetails = data.isNotEmpty ? data[0] : null;
 
           if (docDetails != null && docDetails is Map<String, dynamic>) {
+            if (!mounted) return;
             setState(() {
-              gstController.text = docDetails['GST'] ?? ''; // Fill GST field
-              typeController.text = docDetails['PTYPE'] ?? ''; // Fill Type field
-              partyNameController.text = docDetails['PARTYID'] ?? ''; // Fill Party Name field
+              gstController.text = docDetails['GST'] ?? '';
+              typeController.text = docDetails['PTYPE'] ?? '';
+              party.text = docDetails['PARTYMASID'].toString();
+              partyNameController.text = docDetails['PARTYID'] ?? '';
             });
+
           } else {
             debugPrint('Unexpected data format: $docDetails');
           }
@@ -444,10 +447,10 @@ class _GoodsInwardState extends State<GoodsInward> {
       "DOCDATE": formattedDateTime.split('T')[0],  // Keeping only date part
       "DINWNO": dinWno.text,
       "DINWBY": dinWby.text,
-      "TODEPT": toDept.text,
+      "TODEPT": "0",
       "ATIME": formattedDateTime.substring(11),  // Extract only time part
       "ITIME": formattedDateTime,
-      "FINYEAR": "/24/",
+      "FINYEAR": "/25/",
       "DOCID": docIdController.text,
       "SUPP": supp.text,
       "USERID": username,
@@ -471,6 +474,9 @@ class _GoodsInwardState extends State<GoodsInward> {
     print('Dynamic URL: $url');
 
     try {
+
+
+
       final response = await http.post(
         Uri.parse(url),
         headers: headers,

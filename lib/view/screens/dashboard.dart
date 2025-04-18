@@ -7,7 +7,6 @@ import 'package:ncc/view/screens/goods_outward.dart';
 import 'package:ncc/view/screens/reports.dart';
 import 'package:ncc/view/screens/reportsout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'form.dart';
 
 
