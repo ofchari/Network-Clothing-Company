@@ -1,17 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:barcode/barcode.dart'; // Added for barcode generation
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:get/get.dart';
-// import 'package:hive/hive.dart';
-import 'package:http/http.dart'as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GoodsInward extends StatefulWidget {
@@ -42,81 +48,75 @@ class _GoodsInwardState extends State<GoodsInward> {
   // Get the current date and time
   DateTime now = DateTime.now();
 
-// Convert to ISO 8601 string (common format for APIs)
+  String currentTime =
+      DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
 
-  String currentTime = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
-
-  // print(currentTime) // Output: e.g., 2024-12-18T14:35:20.123Z
   /// Controller for post method //
-  final gateInMasId = TextEditingController();  // GATEINMASID
-  final cancel = TextEditingController();       // CANCEL
-  final sourceId = TextEditingController();     // SOURCEID
-  final mapName = TextEditingController();      // MAPNAME
-  final username = TextEditingController();     // USERNAME
-  final modifiedOn = TextEditingController();   // MODIFIEDON
-  final createdBy = TextEditingController();    // CREATEDBY
-  final createdOn = TextEditingController();    // CREATEDON
-  final wkId = TextEditingController();         // WKID
-  final appLevel = TextEditingController();     // APP_LEVEL
-  final appDesc = TextEditingController();      // APP_DESC
-  final appSLevel = TextEditingController();    // APP_SLEVEL
+  final gateInMasId = TextEditingController(); // GATEINMASID
+  final cancel = TextEditingController(); // CANCEL
+  final sourceId = TextEditingController(); // SOURCEID
+  final mapName = TextEditingController(); // MAPNAME
+  final username = TextEditingController(); // USERNAME
+  final modifiedOn = TextEditingController(); // MODIFIEDON
+  final createdBy = TextEditingController(); // CREATEDBY
+  final createdOn = TextEditingController(); // CREATEDON
+  final wkId = TextEditingController(); // WKID
+  final appLevel = TextEditingController(); // APP_LEVEL
+  final appDesc = TextEditingController(); // APP_DESC
+  final appSLevel = TextEditingController(); // APP_SLEVEL
   final cancelRemarks = TextEditingController(); // CANCELREMARKS
-  final wfRoles = TextEditingController();      // WFROLES
-  final docDate = TextEditingController();      // DOCDATE
-  final delCtrl = TextEditingController();      // DELCTRL
-  final dept = TextEditingController();         // DEPT
-  final dcNo = TextEditingController();         // DCNO
-  final stime = TextEditingController();        // STIME
-  final party = TextEditingController();        // PARTY
-  final delQty = TextEditingController();       // DELQTY
-  final dupChk = TextEditingController();       // DUPCHK
-  final jobClose = TextEditingController();     // JOBCLOSE
-  final stmUser = TextEditingController();      // STMUSER
-  final remarks = TextEditingController();      // REMARKS
-  final eName = TextEditingController();        // ENAME
-  final dcDate = TextEditingController();       // DCDATE
-  final dinWno = TextEditingController();       // DINWNO
-  final dinWon = TextEditingController();       // DINWON
-  final dinWby = TextEditingController();       // DINWBY
-  final toDept = TextEditingController();       // TODEPT
-  final aTime = TextEditingController();        // ATIME
-  final iTime = TextEditingController();        // ITIME
-  final finYear = TextEditingController();      // FINYEAR
+  final wfRoles = TextEditingController(); // WFROLES
+  final docDate = TextEditingController(); // DOCDATE
+  final delCtrl = TextEditingController(); // DELCTRL
+  final dept = TextEditingController(); // DEPT
+  final dcNo = TextEditingController(); // DCNO
+  final stime = TextEditingController(); // STIME
+  final party = TextEditingController(); // PARTY
+  final delQty = TextEditingController(); // DELQTY
+  final dupChk = TextEditingController(); // DUPCHK
+  final jobClose = TextEditingController(); // JOBCLOSE
+  final stmUser = TextEditingController(); // STMUSER
+  final remarks = TextEditingController(); // REMARKS
+  final eName = TextEditingController(); // ENAME
+  final dcDate = TextEditingController(); // DCDATE
+  final dinWno = TextEditingController(); // DINWNO
+  final dinWon = TextEditingController(); // DINWON
+  final dinWby = TextEditingController(); // DINWBY
+  final toDept = TextEditingController(); // TODEPT
+  final aTime = TextEditingController(); // ATIME
+  final iTime = TextEditingController(); // ITIME
+  final finYear = TextEditingController(); // FINYEAR
   // final docId = TextEditingController();        // DOCID
-  final supp = TextEditingController();         // SUPP
-  final jobClosedBy = TextEditingController();  // JOBCLOSEDBY
-  final jClosedOn = TextEditingController();    // JCLOSEDON
-  final userId = TextEditingController();       // USERID
-  final nParty = TextEditingController();       // NPARTY
-  final podcChk = TextEditingController();      // PODCCHK
+  final supp = TextEditingController(); // SUPP
+  final jobClosedBy = TextEditingController(); // JOBCLOSEDBY
+  final jClosedOn = TextEditingController(); // JCLOSEDON
+  final userId = TextEditingController(); // USERID
+  final nParty = TextEditingController(); // NPARTY
+  final podcChk = TextEditingController(); // PODCCHK
   // final gst = TextEditingController();          // GST
-  final gstYn = TextEditingController();        // GSTYN
-  final podc = TextEditingController();         // PODC
-  final recId = TextEditingController();        // RECID
-  final docMaxNo = TextEditingController();     // DOCMAXNO
-  final dPrefix = TextEditingController();      // DPREFIX
-  final docId1 = TextEditingController();       // DOCID1
-  final ussCode = TextEditingController();       // USCODE
-  final delReq = TextEditingController();       // DELREQ
-  final docIdOld = TextEditingController();     // DOCIDOLD
-  final party1 = TextEditingController();       // PARTY1
-  final dupChk1 = TextEditingController();      // DUPCHK1
-  final docid = TextEditingController();      // DUPCHK1
-  final dcnumber = TextEditingController();      // DUPCHK1
-
+  final gstYn = TextEditingController(); // GSTYN
+  final podc = TextEditingController(); // PODC
+  final recId = TextEditingController(); // RECID
+  final docMaxNo = TextEditingController(); // DOCMAXNO
+  final dPrefix = TextEditingController(); // DPREFIX
+  final docId1 = TextEditingController(); // DOCID1
+  final ussCode = TextEditingController(); // USCODE
+  final delReq = TextEditingController(); // DELREQ
+  final docIdOld = TextEditingController(); // DOCIDOLD
+  final party1 = TextEditingController(); // PARTY1
+  final dupChk1 = TextEditingController(); // DUPCHK1
+  final docid = TextEditingController(); // DUPCHK1
+  final dcnumber = TextEditingController(); // DUPCHK1
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchAndSetDocId();
     fetchDocIds();
     fetchDeviceId();
-
   }
 
-               /// Showing IMEI Number ///
-
+  /// Showing IMEI Number ///
   Future<void> fetchDeviceId() async {
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -132,7 +132,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-              ///  Get Api's method for Doc Id's //
+  ///  Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
@@ -151,7 +151,8 @@ class _GoodsInwardState extends State<GoodsInward> {
 
       if (response.statusCode == 200) {
         var rawData = response.body.trim(); // Trim whitespace and newlines
-        rawData = rawData.replaceAll(RegExp(r'\]\['), ','); // Fix malformed JSON
+        rawData =
+            rawData.replaceAll(RegExp(r'\]\['), ','); // Fix malformed JSON
         print(response.body);
 
         try {
@@ -177,9 +178,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-
-                 /// Pass the Docid and get the other details ///
-  ///
+  /// Pass the Docid and get the other details ///
   Future<void> fetchDocDetails(String docId) async {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
@@ -190,7 +189,8 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
-    final String url = 'http://$serverIp:$port/gate_gst_doc_get_api?DOCID=$docId';
+    final String url =
+        'http://$serverIp:$port/gate_gst_doc_get_api?DOCID=$docId';
     debugPrint('Dynamic URL for details: $url');
 
     try {
@@ -201,7 +201,8 @@ class _GoodsInwardState extends State<GoodsInward> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        debugPrint('Fetched data: $data'); // Print the response to verify the structure
+        debugPrint(
+            'Fetched data: $data'); // Print the response to verify the structure
 
         // Check if the data is a list (it should be a list of maps)
         if (data is List) {
@@ -215,7 +216,6 @@ class _GoodsInwardState extends State<GoodsInward> {
               party.text = docDetails['PARTYMASID'].toString();
               partyNameController.text = docDetails['PARTYID'] ?? '';
             });
-
           } else {
             debugPrint('Unexpected data format: $docDetails');
           }
@@ -230,72 +230,63 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-
   TextEditingController docIdController = TextEditingController();
 
-
-              /// Fetch DOCID and increment it automatically when the screen loads ///
+  /// Fetch DOCID and increment it automatically when the screen loads ///
   Future<void> fetchAndSetDocId() async {
-    // Retrieve the server IP and port from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
-    final username = prefs.getString('username') ?? ''; // Retrieve the username
+    final username = prefs.getString('username') ?? '';
 
-    // Check if server IP and port are configured
     if (serverIp.isEmpty || port.isEmpty) {
       debugPrint('Error: Server IP or port is not configured.');
       return;
     }
 
-    // Construct the dynamic API URL using serverIp and port from SharedPreferences
-    // final String url = 'http://$serverIp:$port/db/get_docid_api.php?fields=["DOCID"]&USERNAME=$username';
-    final String url = 'http://$serverIp:$port/get_docid_api?USERNAME=$username';
+    final String url =
+        'http://$serverIp:$port/get_docid_api?USERNAME=$username';
 
     try {
-      // Make the GET request to fetch the Doc ID
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         print(response.body);
 
-        if (data.isNotEmpty) {
+        if (data.isNotEmpty && data[0]['DOCID'] != null) {
           final String currentDocId = data[0]['DOCID'];
 
-          // Increment the Doc ID number programmatically
-          String incrementedDocId = incrementDocId(currentDocId);
+          // Increment logic
+          final String incrementedDocId = incrementDocId(currentDocId);
 
-          // Update the controller with the incremented Doc ID
           setState(() {
             docIdController.text = incrementedDocId;
-            print("DocId from the username passed here $docIdController");
           });
         } else {
-          showErrorSnackBar('No DOCID found from the server.');
+          // If no DOCID returned, fallback to default
+          setState(() {
+            docIdController.text = "GI0001";
+          });
+          showErrorSnackBar('No DOCID found. Set to default GI0001.');
         }
       } else {
-        showErrorSnackBar('Failed to fetch DOCID. Status code: ${response.statusCode}');
+        showErrorSnackBar(
+          'Failed to fetch DOCID. Status code: ${response.statusCode}',
+        );
       }
     } catch (e) {
       showErrorSnackBar('Error fetching DOCID: $e');
     }
   }
 
-
   // Method to increment the Doc ID number
-  String incrementDocId(String docId) {
-    final RegExp regex = RegExp(r'(\d+)$');
-    final match = regex.firstMatch(docId);
-
-    if (match != null) {
-      String lastNumber = match.group(0)!; // Extract the numeric part
-      int incrementedNumber = int.parse(lastNumber) + 1;
-
-      // Replace the last number with the incremented number
-      return docId.replaceFirst(lastNumber, incrementedNumber.toString());
-    }
-    return docId; // Return the same if no numeric part is found
+  String incrementDocId(String currentId) {
+    final prefix = currentId.replaceAll(RegExp(r'\d'), '');
+    final numberPart = currentId.replaceAll(RegExp(r'\D'), '');
+    final number = int.tryParse(numberPart) ?? 0;
+    final nextNumber = number + 1;
+    return '$prefix${nextNumber.toString().padLeft(4, '0')}';
   }
 
   void showErrorSnackBar(String message) {
@@ -309,19 +300,20 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   // Method to extract the numeric part from DocID
   String extractNumericPart(String docId) {
-    final RegExp regex = RegExp(r'(\d+)$');  // Matches the last numeric part
+    final RegExp regex = RegExp(r'(\d+)$'); // Matches the last numeric part
     final match = regex.firstMatch(docId);
 
     if (match != null) {
-      return match.group(0)!;  // Return the matched numeric part
+      return match.group(0)!; // Return the matched numeric part
     }
 
-    return '0';  // Return 0 if no numeric part is found
+    return '0'; // Return 0 if no numeric part is found
   }
 
   // Method to extract the prefix (e.g., "Eag") from fetchsetdocid
   String extractUsCode(String fetchAndSetDocId) {
-    final RegExp regex = RegExp(r'^(\w+)(?=/)'); // Matches the prefix before the first "/"
+    final RegExp regex =
+        RegExp(r'^(\w+)(?=/)'); // Matches the prefix before the first "/"
     final match = regex.firstMatch(fetchAndSetDocId);
 
     if (match != null) {
@@ -330,11 +322,40 @@ class _GoodsInwardState extends State<GoodsInward> {
     return ''; // Return empty string if no match is found
   }
 
-                  /// Post method for Goods Inward //
+  /// Function to generate barcode as PNG bytes ///
 
+  Uint8List generateBarcodePng(String data) {
+    if (data.isEmpty) {
+      throw Exception('Barcode data cannot be empty');
+    }
+
+    final bc = Barcode.code128();
+    final barcode = bc.make(data, width: 300, height: 100);
+
+    // Create white background image
+    final image = img.Image(width: 300, height: 100);
+    img.fill(image, color: img.ColorRgb8(255, 255, 255));
+
+    // Draw black bars
+    for (final rect in barcode) {
+      img.fillRect(
+        image,
+        x1: rect.left.toInt(),
+        y1: rect.top.toInt(),
+        x2: (rect.left + rect.width).toInt(),
+        y2: (rect.top + rect.height).toInt(),
+        color: img.ColorRgb8(0, 0, 0),
+      );
+    }
+
+    return img.encodePng(image);
+  }
+
+  /// Post method for Goods Inward with Barcode Generation //
   Future<void> MobileDocument(BuildContext context) async {
     HttpClient client = HttpClient();
-    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
 
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
@@ -346,7 +367,8 @@ class _GoodsInwardState extends State<GoodsInward> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Configuration Error'),
-          content: const Text('Server IP and port are not configured. Please set them in the settings.'),
+          content: const Text(
+              'Server IP and port are not configured. Please set them in the settings.'),
           actions: [
             ElevatedButton(
               child: const Text('OK'),
@@ -389,8 +411,8 @@ class _GoodsInwardState extends State<GoodsInward> {
       print(docIdController.text);
     });
 
-    String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
-
+    String formattedDateTime =
+        DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
 
     if (dcnumber.text.trim().isEmpty) {
       Get.snackbar(
@@ -425,6 +447,9 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
+    final String postedDocId =
+        docIdController.text; // Capture DocId before posting
+
     final data = {
       "CANCEL": "F",
       "SOURCEID": "0",
@@ -444,13 +469,13 @@ class _GoodsInwardState extends State<GoodsInward> {
       "REMARKS": remarks.text,
       "ENAME": "18970000000000",
       "DCDATE": _dateController.text,
-      "DOCDATE": formattedDateTime.split('T')[0],  // Keeping only date part
+      "DOCDATE": formattedDateTime.split('T')[0], // Keeping only date part
       "DINWNO": dinWno.text,
       "DINWBY": dinWby.text,
       "TODEPT": "0",
-      "ATIME": formattedDateTime.substring(11),  // Extract only time part
+      "ATIME": formattedDateTime.substring(11), // Extract only time part
       "ITIME": formattedDateTime,
-      "FINYEAR": "/25/",
+      "FINYEAR": "/25/", // Kept as /25/ for consistency
       "DOCID": docIdController.text,
       "SUPP": supp.text,
       "USERID": username,
@@ -461,7 +486,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "PODC": searchController.text,
       "RECID": recId.text,
       "DOCMAXNO": lastNumber,
-      "DPREFIX": "$usCode/24",
+      "DPREFIX": "$usCode/25",
       "DOCID1": docIdController.text,
       "USCODE": usCode,
       "DELREQ": delReq.text,
@@ -474,9 +499,6 @@ class _GoodsInwardState extends State<GoodsInward> {
     print('Dynamic URL: $url');
 
     try {
-
-
-
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
@@ -496,7 +518,8 @@ class _GoodsInwardState extends State<GoodsInward> {
           if (match != null) {
             String lastNumber = match.group(0)!;
             int incrementedNumber = int.parse(lastNumber) + 1;
-            String newDocId = currentDocId.replaceFirst(lastNumber, incrementedNumber.toString());
+            String newDocId = currentDocId.replaceFirst(
+                lastNumber, incrementedNumber.toString());
 
             docIdController.text = newDocId;
             fetchAndSetDocId();
@@ -509,6 +532,44 @@ class _GoodsInwardState extends State<GoodsInward> {
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green,
           colorText: Colors.white,
+        );
+
+        // Show Barcode Dialog after successful post
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Barcode'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.memory(
+                  generateBarcodePng(postedDocId),
+                  width: 300,
+                  height: 100,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  postedDocId,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton.icon(
+                onPressed: () => _printBarcode(postedDocId),
+                icon: const Icon(Icons.print),
+                label: const Text("Print"),
+              ),
+              ElevatedButton(
+                child: const Text('Close'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
         );
 
         dcnumber.clear();
@@ -538,7 +599,8 @@ class _GoodsInwardState extends State<GoodsInward> {
         fetchDocIds();
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
-        final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
+        final serverMessages =
+            responseJson['_server_messages'] ?? 'No server messages found';
 
         showDialog(
           context: context,
@@ -585,34 +647,67 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
+  /// Function to print the Barcode as PDF ///
+  Future<void> _printBarcode(String data) async {
+    final pdf = pw.Document();
+    final imageBytes = generateBarcodePng(data);
+    final image = pw.MemoryImage(imageBytes);
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              pw.Center(child: pw.Image(image, width: 300, height: 100)),
+              pw.SizedBox(height: 16),
+              pw.Text(
+                data,
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
-      height = constraints.maxHeight;
-      width = constraints.maxWidth;
-      if(width<=1000){
-        return _smallBuildLayout();
-      }
-      else{
-        return const Text("Please Make sure Your device is in portrait view");
-      }
-    },);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        height = constraints.maxHeight;
+        width = constraints.maxWidth;
+        if (width <= 1000) {
+          return _smallBuildLayout();
+        } else {
+          return const Text("Please Make sure Your device is in portrait view");
+        }
+      },
+    );
   }
-  Widget _smallBuildLayout(){
-               /// Define Sizes //
+
+  Widget _smallBuildLayout() {
+    /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
     return Scaffold(
         backgroundColor: const Color(0xfff1f2f4),
         appBar: AppBar(
-          // leading: GestureDetector(
-          //   onTap: (){
-          //     Get.back();
-          //   },
-          //     child: Icon(Icons.arrow_back_ios,color: Colors.black,)),
-          title: const Subhead(text: "Gate Inward", weight: FontWeight.w500, color: Colors.black,),
+          title: const Subhead(
+            text: "Gate Inward",
+            weight: FontWeight.w500,
+            color: Colors.black,
+          ),
           centerTitle: true,
           toolbarHeight: 70.h,
           backgroundColor: const Color(0xfff1f2f4),
@@ -620,506 +715,525 @@ class _GoodsInwardState extends State<GoodsInward> {
         body: SizedBox(
           width: width.w,
           child: SingleChildScrollView(
-            child: Column(
-                children: [
-                  SizedBox(height: 10.h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Exporter :", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.09.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      // controller: exports,
-                      readOnly: true,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "NETWORK CLOTHING COMPANY PRIVATE LIMITED",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.home_work_outlined,
-                            color: Colors.black,
-                            size: 16,
-                          ),
-                          border: InputBorder.none
+            child: Column(children: [
+              SizedBox(
+                height: 10.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Exporter :",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.09.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  readOnly: true,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "NETWORK CLOTHING COMPANY PRIVATE LIMITED",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 13.h,),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text('    Doc ID:',
-                        style: GoogleFonts.dmSans(fontWeight: FontWeight.w500, fontSize: 16)),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      // controller: docIdController,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: docIdController.text,
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.security_update_good_rounded,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
+                      prefixIcon: const Icon(
+                        Icons.home_work_outlined,
+                        color: Colors.black,
+                        size: 16,
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 14.5.h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Po/Dc No ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  const SizedBox(height: 10),
-                  Container(
-                      height: height / 15.2.h,
-                      width: width / 1.13.w,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(color: Colors.grey.shade500),
-                        borderRadius: BorderRadius.circular(6),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 13.h,
+              ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Text('    Doc ID:',
+                    style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w500, fontSize: 16)),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: docIdController.text,
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
                       ),
-                      child:
+                      prefixIcon: Icon(
+                        Icons.security_update_good_rounded,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Po/Dc No ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              const SizedBox(height: 10),
+              Container(
+                  height: height / 15.2.h,
+                  width: width / 1.13.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: TextFormField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade700,
+                        size: 20,
+                      ),
+                      hintText: "Type to search Po/Dc No",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 10),
+                    ),
+                    onChanged: (text) {
+                      setState(() {
+                        if (text.isEmpty) {
+                          filteredDocIds =
+                              []; // Clear suggestions when text is empty
+                        } else {
+                          filteredDocIds = docIds.where((doc) {
+                            final docId = doc['DOCID']?.toString() ?? '';
+                            return docId
+                                .toLowerCase()
+                                .contains(text.toLowerCase());
+                          }).toList();
+                        }
+                      });
+                    },
+                  )),
+              const SizedBox(height: 10),
+              if (searchController.text.isNotEmpty && filteredDocIds.isNotEmpty)
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: ListView.builder(
+                    itemCount: filteredDocIds.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == filteredDocIds.length) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                      TextFormField(
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: Colors.grey.shade700,
-                            size: 20,
-                          ),
-                          hintText: "Type to search Po/Dc No",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                        ),
-                        onChanged: (text) {
+                      final doc = filteredDocIds[index];
+                      return ListTile(
+                        title: Text(doc['DOCID']),
+                        onTap: () async {
+                          searchController.text = doc[
+                              'DOCID']; // Update the TextFormField with the selected DOCID
+                          await fetchDocDetails(doc[
+                              'DOCID']); // Fetch details for the selected DocID
                           setState(() {
-                            if (text.isEmpty) {
-                              filteredDocIds = []; // Clear suggestions when text is empty
-                            } else {
-                              // Filter data based on user input
-                              filteredDocIds = docIds.where((doc) {
-                                final docId = doc['DOCID']?.toString() ?? '';
-                                return docId.toLowerCase().contains(text.toLowerCase());
-                              }).toList();
-                            }
+                            filteredDocIds =
+                                []; // Clear the suggestions list explicitly
                           });
                         },
-                      )
-
-                    // Column(
-                    //   children: [
-                    //     Padding(
-                    //       padding: const EdgeInsets.all(8.0),
-                    //       child: TextFormField(
-                    //         controller: searchController,
-                    //         decoration: InputDecoration(
-                    //           prefixIcon: Icon(
-                    //             Icons.search,
-                    //             color: Colors.grey.shade700,
-                    //             size: 20,
-                    //           ),
-                    //           hintText: "Type to search Po/Dc No",
-                    //           border: OutlineInputBorder(
-                    //             borderRadius: BorderRadius.circular(10),
-                    //             borderSide: BorderSide(color: Colors.grey.shade300),
-                    //           ),
-                    //           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-                    //         ),
-                    //         onChanged: (text) {
-                    //           debugPrint('Fetched ${docIds.length} records successfully.');
-                    //           setState(() {
-                    //             debugPrint('Fetched ${docIds.length} records successfully.');
-                    //             if (text.isEmpty) {
-                    //               filteredDocIds = docIds; // Show all data when search is empty
-                    //             } else {
-                    //               filteredDocIds = docIds.where((doc) {
-                    //                 final docId = doc['DOCID']?.toString() ?? '';
-                    //                 return docId.toLowerCase().contains(text.toLowerCase());
-                    //               }).toList();
-                    //             }
-                    //           });
-                    //         },
-                    //       ),
-                    //     ),
-                    //     Expanded(
-                    //       child: ListView.builder(
-                    //         itemCount: filteredDocIds.length,
-                    //         itemBuilder: (context, index) {
-                    //           return ListTile(
-                    //             title: Text(filteredDocIds[index]['DOCID'] ?? 'Unknown'),
-                    //             subtitle: Text(filteredDocIds[index].toString()),
-                    //           );
-                    //         },
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-
+                      );
+                    },
                   ),
-                  const SizedBox(height: 10),
-// Suggestions List - show only when there is text input and filtered results
-                  // Suggestions List - show only when there is text input and filtered results
-                  if (searchController.text.isNotEmpty && filteredDocIds.isNotEmpty)
+                ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     GST No ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  controller: gstController,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.security_update_good_rounded,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Type ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  controller: typeController,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.merge_type,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Party Name ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  controller: partyNameController,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      prefixIcon: Icon(
+                        Icons.data_exploration_outlined,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "      DC No/Dt",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
                     Container(
-                      height: 150,
+                      height: height / 15.2.h,
+                      width: width / 2.2.w,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(6),
+                          color: Colors.grey.shade200,
+                          border: Border.all(color: Colors.grey.shade500),
+                          borderRadius: BorderRadius.circular(6.r)),
+                      child: TextFormField(
+                        controller: dcnumber,
+                        style: GoogleFonts.dmSans(
+                            textStyle: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black)),
+                        decoration: InputDecoration(
+                            labelText: "",
+                            labelStyle: GoogleFonts.sora(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.data_exploration_outlined,
+                              color: Colors.grey.shade700,
+                              size: 17.5,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                            border: InputBorder.none),
                       ),
-                      child: ListView.builder(
-                        itemCount: filteredDocIds.length + (isLoading ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == filteredDocIds.length) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          final doc = filteredDocIds[index];
-                          return ListTile(
-                            title: Text(doc['DOCID']),
-                            onTap: () async {
-                              searchController.text = doc['DOCID'];  // Update the TextFormField with the selected DOCID
-                              await fetchDocDetails(doc['DOCID']);  // Fetch details for the selected DocID
-                              setState(() {
-                                filteredDocIds = []; // Clear the suggestions list explicitly
-                              });
-                            },
+                    ),
+                    Container(
+                      height: height / 15.2.h,
+                      width: width / 2.2.w,
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          border: Border.all(color: Colors.grey.shade500),
+                          borderRadius: BorderRadius.circular(6.r)),
+                      child: TextFormField(
+                        controller: _dateController,
+                        onTap: () async {
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
                           );
+                          if (pickedDate != null) {
+                            _dateController.text =
+                                DateFormat('yyyy-MM-dd').format(pickedDate);
+                          }
                         },
-                      ),
-                    ),
-
-                  SizedBox(height: 14.5..h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     GST No ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      controller: gstController,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.security_update_good_rounded,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 14.5..h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Type ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      controller: typeController,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.merge_type,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 14.5..h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Party Name ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      controller: partyNameController,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          prefixIcon: Icon(
-                            Icons.data_exploration_outlined,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          border: InputBorder.none
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 14.5..h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "      DC No/Dt", weight: FontWeight.w500, color: Colors.black)),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Container(
-                          height: height/15.2.h,
-                          width: width/2.2.w,
-                          decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              border: Border.all(
-                                  color: Colors.grey.shade500
-                              ),
-                              borderRadius: BorderRadius.circular(6.r)
-                          ),
-                          child: TextFormField(
-                            controller: dcnumber,
-                            style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                            decoration: InputDecoration(
-                                labelText: "",
-                                labelStyle: GoogleFonts.sora(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black,
-                                ),
-                                prefixIcon:  Icon(
-                                  Icons.data_exploration_outlined,
-                                  color: Colors.grey.shade700,
-                                  size: 17.5,
-                                ),
-                                contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                                border: InputBorder.none
+                        style: GoogleFonts.dmSans(
+                            textStyle: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black)),
+                        decoration: InputDecoration(
+                            labelText: "Date",
+                            labelStyle: GoogleFonts.sora(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
                             ),
-                          ),
-                        ),
-                        Container(
-                          height: height/15.2.h,
-                          width: width/2.2.w,
-                          decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              border: Border.all(
-                                  color: Colors.grey.shade500
-                              ),
-                              borderRadius: BorderRadius.circular(6.r)
-                          ),
-                          child: TextFormField(
-                            controller: _dateController,
-                            onTap: () async {
-                              DateTime? pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (pickedDate != null) {
-                                _dateController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
-                              }
-                            },
-                            style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                            decoration: InputDecoration(
-                                labelText: "Date",
-                                labelStyle: GoogleFonts.sora(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black,
-                                ),
-                                prefixIcon:  Icon(
-                                  Icons.date_range,
-                                  color: Colors.grey.shade700,
-                                  size: 17.5,
-                                ),
-                                border: InputBorder.none
+                            prefixIcon: Icon(
+                              Icons.date_range,
+                              color: Colors.grey.shade700,
+                              size: 17.5,
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 14.5..h,),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Time", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      readOnly: true,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: currentTime,
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.alarm,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
+                            border: InputBorder.none),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 14.5..h),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Grn qty ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      controller: delQty,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.merge_type,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 14.5.h,
+              ),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Time",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  readOnly: true,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: currentTime,
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 14.5..h),
-                  const Align(
-                      alignment: Alignment.topLeft,
-                      child: MyText(text: "     Stm User ", weight: FontWeight.w500, color: Colors.black)),
-                  SizedBox(height: 7.5.h,),
-                  Container(
-                    height: height/15.2.h,
-                    width: width/1.13.w,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        border: Border.all(
-                            color: Colors.grey.shade500
-                        ),
-                        borderRadius: BorderRadius.circular(6.r)
-                    ),
-                    child: TextFormField(
-                      initialValue: deviceId,
-                      style: GoogleFonts.dmSans(textStyle: TextStyle(fontSize: 15.sp,fontWeight: FontWeight.w500,color: Colors.black)),
-                      decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon:  Icon(
-                            Icons.desktop_mac,
-                            color: Colors.grey.shade700,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none
+                      prefixIcon: Icon(
+                        Icons.alarm,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 15.h,),
-                  GestureDetector(
-                      onTap: (){
-                        MobileDocument(context);
-                      },
-                      child: Buttons(height: height/18.h, width: width/2.w, radius: BorderRadius.circular(7), color: Colors.blue, text: "Submit")),
-                  SizedBox(height: 15.h,),
-                ]),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(height: 14.5.h),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Grn qty ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  controller: delQty,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.merge_type,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(height: 14.5.h),
+              const Align(
+                  alignment: Alignment.topLeft,
+                  child: MyText(
+                      text: "     Stm User ",
+                      weight: FontWeight.w500,
+                      color: Colors.black)),
+              SizedBox(
+                height: 7.5.h,
+              ),
+              Container(
+                height: height / 15.2.h,
+                width: width / 1.13.w,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    border: Border.all(color: Colors.grey.shade500),
+                    borderRadius: BorderRadius.circular(6.r)),
+                child: TextFormField(
+                  initialValue: deviceId,
+                  style: GoogleFonts.dmSans(
+                      textStyle: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black)),
+                  decoration: InputDecoration(
+                      labelText: "",
+                      labelStyle: GoogleFonts.sora(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.desktop_mac,
+                        color: Colors.grey.shade700,
+                        size: 17.5,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                      border: InputBorder.none),
+                ),
+              ),
+              SizedBox(
+                height: 15.h,
+              ),
+              GestureDetector(
+                  onTap: () {
+                    MobileDocument(context);
+                  },
+                  child: Buttons(
+                      height: height / 18.h,
+                      width: width / 2.w,
+                      radius: BorderRadius.circular(7),
+                      color: Colors.blue,
+                      text: "Submit")),
+              SizedBox(
+                height: 15.h,
+              ),
+            ]),
           ),
-        )
-    );
+        ));
   }
 }
