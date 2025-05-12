@@ -1,18 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:ncc/view/screens/scanner.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class GoodsOutward extends StatefulWidget {
   const GoodsOutward({super.key});
@@ -36,70 +36,71 @@ class _GoodsOutwardState extends State<GoodsOutward> {
   final _delQtyController = TextEditingController();
 
   // String formattedDate = DateFormat('dd-MMM-yyyy').format(DateTime.now());
-  String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
-
+  String formattedDateTime =
+      DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
 
   // Get the current date and time
   DateTime now = DateTime.now();
 
 // Convert to ISO 8601 string (common format for APIs)
-  String currentTime = DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
+  String currentTime =
+      DateTime.now().toLocal().toString().split(' ')[1].substring(0, 8);
 
   /// Controller for post method //
-  final gateInMasId = TextEditingController();  // GATEINMASID
-  final cancel = TextEditingController();       // CANCEL
-  final sourceId = TextEditingController();     // SOURCEID
-  final mapName = TextEditingController();      // MAPNAME
-  final username = TextEditingController();     // USERNAME
-  final modifiedOn = TextEditingController();   // MODIFIEDON
-  final createdBy = TextEditingController();    // CREATEDBY
-  final createdOn = TextEditingController();    // CREATEDON
-  final wkId = TextEditingController();         // WKID
-  final appLevel = TextEditingController();     // APP_LEVEL
-  final appDesc = TextEditingController();      // APP_DESC
-  final appSLevel = TextEditingController();    // APP_SLEVEL
+  final gateInMasId = TextEditingController(); // GATEINMASID
+  final cancel = TextEditingController(); // CANCEL
+  final sourceId = TextEditingController(); // SOURCEID
+  final mapName = TextEditingController(); // MAPNAME
+  final username = TextEditingController(); // USERNAME
+  final modifiedOn = TextEditingController(); // MODIFIEDON
+  final createdBy = TextEditingController(); // CREATEDBY
+  final createdOn = TextEditingController(); // CREATEDON
+  final wkId = TextEditingController(); // WKID
+  final appLevel = TextEditingController(); // APP_LEVEL
+  final appDesc = TextEditingController(); // APP_DESC
+  final appSLevel = TextEditingController(); // APP_SLEVEL
   final cancelRemarks = TextEditingController(); // CANCELREMARKS
-  final wfRoles = TextEditingController();      // WFROLES
-  final docDate = TextEditingController();      // DOCDATE
-  final delCtrl = TextEditingController();      // DELCTRL
-  final dept = TextEditingController();         // DEPT
-  final dcNo = TextEditingController();         // DCNO
-  final stime = TextEditingController();        // STIME
+  final wfRoles = TextEditingController(); // WFROLES
+  final docDate = TextEditingController(); // DOCDATE
+  final delCtrl = TextEditingController(); // DELCTRL
+  final dept = TextEditingController(); // DEPT
+  final dcNo = TextEditingController(); // DCNO
+  final stime = TextEditingController(); // STIME
   // final party = TextEditingController();        // PARTY
-  final delQty = TextEditingController();       // DELQTY
-  final dupChk = TextEditingController();       // DUPCHK
-  final jobClose = TextEditingController();     // JOBCLOSE
-  final stmUser = TextEditingController();      // STMUSER
-  final remarks = TextEditingController();      // REMARKS
+  final delQty = TextEditingController(); // DELQTY
+  final dupChk = TextEditingController(); // DUPCHK
+  final jobClose = TextEditingController(); // JOBCLOSE
+  final stmUser = TextEditingController(); // STMUSER
+  final remarks = TextEditingController(); // REMARKS
   // final eName = TextEditingController();        // ENAME
-  final dcDate = TextEditingController();       // DCDATE
-  final dinWno = TextEditingController();       // DINWNO
-  final dinWon = TextEditingController();       // DINWON
-  final dinWby = TextEditingController();       // DINWBY
-  final toDept = TextEditingController();       // TODEPT
-  final aTime = TextEditingController();        // ATIME
-  final iTime = TextEditingController();        // ITIME
-  final finYear = TextEditingController();      // FINYEAR
+  final dcDate = TextEditingController(); // DCDATE
+  final dinWno = TextEditingController(); // DINWNO
+  final dinWon = TextEditingController(); // DINWON
+  final dinWby = TextEditingController(); // DINWBY
+  final toDept = TextEditingController(); // TODEPT
+  final aTime = TextEditingController(); // ATIME
+  final iTime = TextEditingController(); // ITIME
+  final finYear = TextEditingController(); // FINYEAR
   // final docId = TextEditingController();        // DOCID
-  final supp = TextEditingController();         // SUPP
-  final jobClosedBy = TextEditingController();  // JOBCLOSEDBY
-  final jClosedOn = TextEditingController();    // JCLOSEDON
-  final userId = TextEditingController();       // USERID
-  final nParty = TextEditingController();       // NPARTY
-  final podcChk = TextEditingController();      // PODCCHK
+  final supp = TextEditingController(); // SUPP
+  final jobClosedBy = TextEditingController(); // JOBCLOSEDBY
+  final jClosedOn = TextEditingController(); // JCLOSEDON
+  final userId = TextEditingController(); // USERID
+  final nParty = TextEditingController(); // NPARTY
+  final podcChk = TextEditingController(); // PODCCHK
   // final gst = TextEditingController();          // GST
-  final gstYn = TextEditingController();        // GSTYN
-  final podc = TextEditingController();         // PODC
-  final recId = TextEditingController();        // RECID
-  final docMaxNo = TextEditingController();     // DOCMAXNO
-  final dPrefix = TextEditingController();      // DPREFIX
-  final docId1 = TextEditingController();       // DOCID1
-  final ussCode = TextEditingController();       // USCODE
-  final delReq = TextEditingController();       // DELREQ
-  final docIdOld = TextEditingController();     // DOCIDOLD
-  final party1 = TextEditingController();       // PARTY1
-  final dupChk1 = TextEditingController();      // DUPCHK1
-  final JJFORMNO = TextEditingController();      // DUPCHK1
+  final gstYn = TextEditingController(); // GSTYN
+  final podc = TextEditingController(); // PODC
+  final recId = TextEditingController(); // RECID
+  final docMaxNo = TextEditingController(); // DOCMAXNO
+  final dPrefix = TextEditingController(); // DPREFIX
+  final docId1 = TextEditingController(); // DOCID1
+  final ussCode = TextEditingController(); // USCODE
+  final delReq = TextEditingController(); // DELREQ
+  final docIdOld = TextEditingController(); // DOCIDOLD
+  final party1 = TextEditingController(); // PARTY1
+  final dupChk1 = TextEditingController(); // DUPCHK1
+  final JJFORMNO = TextEditingController(); // DUPCHK1
 
   // Method to fetch data from API and populate fields
 
@@ -113,7 +114,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         _isSnackBarShown = true;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Server IP and port are not configured. Please set them in the settings.'),
+            content: Text(
+                'Server IP and port are not configured. Please set them in the settings.'),
           ),
         );
       }
@@ -125,7 +127,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     print(encodedDcNo);
 
     // Append the encoded dcNo to the URL as a query parameter
-    final String url = 'http://$serverIp:$port/outwarddc_view_get_api?docid=$encodedDcNo';
+    final String url =
+        'http://$serverIp:$port/outwarddc_view_get_api?docid=$encodedDcNo';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -135,7 +138,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         // Ensure the data is a List before calling `firstWhere`
         if (decodedResponse is List) {
           final record = decodedResponse.firstWhere(
-                (item) => item['DOCID'] == dcNo,
+            (item) => item['DOCID'] == dcNo,
             orElse: () => null,
           );
 
@@ -157,7 +160,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
               _dcNoController.text = dcNo; // Set the scanned code
               _dcDateController.text = decodedResponse['DOCDATE'] ?? '';
               _partyController.text = decodedResponse['PARTYID'] ?? '';
-              _delQtyController.text = decodedResponse['TOTQTY']?.toString() ?? '';
+              _delQtyController.text =
+                  decodedResponse['TOTQTY']?.toString() ?? '';
               _isSnackBarShown = false;
             });
           } else {
@@ -174,68 +178,74 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
-
   TextEditingController docIdController = TextEditingController();
 
-                 // Fetch DOCID and increment it automatically when the screen loads
-  Future<void> fetchAndSetDocId() async {
-    // Retrieve the server IP and port from SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    final serverIp = prefs.getString('serverIp') ?? '';
-    final port = prefs.getString('port') ?? '';
-    final username = prefs.getString('username') ?? ''; // Retrieve the username
-
-    // Check if server IP and port are configured
-    if (serverIp.isEmpty || port.isEmpty) {
-      debugPrint('Error: Server IP or port is not configured.');
-      return;
-    }
-
-    // Construct the dynamic API URL using serverIp and port from SharedPreferences
-    final String url = 'http://$serverIp:$port/get_docid_out_api?USERNAME=$username';
-
+  String incrementDocId(String docId) {
     try {
-      // Make the GET request to fetch the Doc ID
-      final response = await http.get(Uri.parse(url));
+      // Split the DocID into parts using '/'
+      final parts = docId.split('/');
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        print(response.body);
-
-        if (data.isNotEmpty) {
-          final String currentDocId = data[0]['DOCID'];
-
-          // Increment the Doc ID number programmatically
-          String incrementedDocId = incrementDocId(currentDocId);
-
-          // Update the controller with the incremented Doc ID
-          setState(() {
-            docIdController.text = incrementedDocId;
-          });
-        } else {
-          showErrorSnackBar('No DOCID found from the server.');
-        }
-      } else {
-        showErrorSnackBar('Failed to fetch DOCID. Status code: ${response.statusCode}');
+      if (parts.length != 3) {
+        throw FormatException('Invalid DocID format');
       }
+
+      // Parse the last part as integer
+      int lastNumber = int.parse(parts[2]);
+
+      // Increment and preserve padding
+      final newLast = (lastNumber + 1).toString().padLeft(parts[2].length, '0');
+
+      // Reconstruct the DocID with incremented last part
+      return '${parts[0]}/${parts[1]}/$newLast';
     } catch (e) {
-      showErrorSnackBar('Error fetching DOCID: $e');
+      // Fallback to original ID if parsing fails
+      debugPrint('Error incrementing DocID: $e');
+      return docId;
     }
   }
 
-                /// Method to increment the Doc ID number
-  String incrementDocId(String docId) {
-    final RegExp regex = RegExp(r'(\d+)$');
-    final match = regex.firstMatch(docId);
+  // Fetch DOCID and increment it automatically when the screen loads
+  Future<void> fetchAndSetDocId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final serverIp = prefs.getString('serverIp') ?? '';
+    final port = prefs.getString('port') ?? '';
+    final username = prefs.getString('username') ?? '';
 
-    if (match != null) {
-      String lastNumber = match.group(0)!; // Extract the numeric part
-      int incrementedNumber = int.parse(lastNumber) + 1;
-
-      // Replace the last number with the incremented number
-      return docId.replaceFirst(lastNumber, incrementedNumber.toString());
+    if (serverIp.isEmpty || port.isEmpty) {
+      showErrorSnackBar('Server configuration missing');
+      return;
     }
-    return docId; // Return the same if no numeric part is found
+
+    final String url =
+        'http://$serverIp:$port/get_docid_out_api?USERNAME=$username';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          final currentDocId = data[0]['DOCID'] as String;
+
+          // Validate DocID format before incrementing
+          if (!_isValidDocId(currentDocId)) {
+            throw FormatException('Invalid DocID format from server');
+          }
+
+          setState(() {
+            docIdController.text = incrementDocId(currentDocId);
+          });
+        }
+      }
+    } catch (e) {
+      showErrorSnackBar('Error fetching DocID: ${e.toString()}');
+    }
+  }
+
+  bool _isValidDocId(String docId) {
+    final parts = docId.split('/');
+    return parts.length == 3 &&
+        int.tryParse(parts[1]) != null &&
+        int.tryParse(parts[2]) != null;
   }
 
   void showErrorSnackBar(String message) {
@@ -249,20 +259,21 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
   // Method to extract the numeric part from DocID
   String extractNumericPart(String docId) {
-    final RegExp regex = RegExp(r'(\d+)$');  // Matches the last numeric part
+    final RegExp regex = RegExp(r'(\d+)$'); // Matches the last numeric part
     final match = regex.firstMatch(docId);
 
     if (match != null) {
-      return match.group(0)!;  // Return the matched numeric part
+      return match.group(0)!; // Return the matched numeric part
     }
 
-    return '0';  // Return 0 if no numeric part is found
+    return '0'; // Return 0 if no numeric part is found
   }
 
-                  /// Post method for this Goods Outward //
+  /// Post method for this Goods Outward //
   Future<void> MobileDocument(BuildContext context) async {
     HttpClient client = HttpClient();
-    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
 
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
@@ -275,7 +286,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Configuration Error'),
-          content: const Text('Server IP and port are not configured. Please set them in the settings.'),
+          content: const Text(
+              'Server IP and port are not configured. Please set them in the settings.'),
           actions: [
             ElevatedButton(
               child: const Text('OK'),
@@ -292,7 +304,10 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     Match? match = regex.firstMatch(currentDocId);
 
     if (match == null) {
-      Get.snackbar("Error", "Invalid DocID format", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Error", "Invalid DocID format",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
       return;
     }
 
@@ -301,17 +316,26 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     String lastNumber = extractNumericPart(docIdController.text);
 
     if (scannedDcNo.isEmpty) {
-      Get.snackbar("Validation Error", "DC Number cannot be empty. Please scan a valid DC Number.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Validation Error",
+          "DC Number cannot be empty. Please scan a valid DC Number.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
       return;
     }
 
     if (storedDcNumbers.contains(scannedDcNo)) {
-      Get.snackbar("Duplicate Entry", "The DC Number '$scannedDcNo' has already been posted. Please scan a unique DC Number.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Duplicate Entry",
+          "The DC Number '$scannedDcNo' has already been posted. Please scan a unique DC Number.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
       return;
     }
 
     // ✅ Generate a fresh timestamp for each post
-    String formattedDateTime = DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
+    String formattedDateTime =
+        DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
 
     final String url = 'http://$serverIp:$port/outward_post_api';
 
@@ -343,7 +367,7 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       "REMARKS": remarks.text,
       "JJFORMNO": JJFORMNO.text,
       "DCNOS": "",
-      "ENME" : "18970000000000",
+      "ENME": "18970000000000",
       "ATIME": formattedDateTime.substring(11),
       "ITIME": formattedDateTime,
       "DCDATE": _dcDateController.text,
@@ -368,15 +392,20 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         await prefs.setStringList(storedDcNumbersKey, storedDcNumbers);
 
         int currentNumber = int.parse(match.group(1)!);
-        String prefix = currentDocId.substring(0, currentDocId.length - match.group(1)!.length);
+        String prefix = currentDocId.substring(
+            0, currentDocId.length - match.group(1)!.length);
         int nextNumber = currentNumber + 1;
-        String nextDocId = '$prefix${nextNumber.toString().padLeft(match.group(1)!.length, '0')}';
+        String nextDocId =
+            '$prefix${nextNumber.toString().padLeft(match.group(1)!.length, '0')}';
 
         setState(() {
           docIdController.text = nextDocId;
         });
 
-        Get.snackbar("Success", "Goods Outward Document posted successfully!", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green, colorText: Colors.white);
+        Get.snackbar("Success", "Goods Outward Document posted successfully!",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white);
 
         _dcNoController.clear();
         _partyController.clear();
@@ -388,10 +417,10 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         recId.clear();
         dPrefix.clear();
         ussCode.clear();
-
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
-        final serverMessages = responseJson['_server_messages'] ?? 'No server messages found';
+        final serverMessages =
+            responseJson['_server_messages'] ?? 'No server messages found';
 
         showDialog(
           context: context,
@@ -408,7 +437,11 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         );
       } else {
         String responseBody = response.body;
-        Get.snackbar("Error", "Request failed with status: ${response.statusCode}\n\nResponse: $responseBody", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar("Error",
+            "Request failed with status: ${response.statusCode}\n\nResponse: $responseBody",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white);
       }
     } catch (error) {
       showDialog(
@@ -427,9 +460,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
-
-
-
   Future<void> fetchDeviceId() async {
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -444,7 +474,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       });
     }
   }
-
 
   Future<void> openMobileScanner() async {
     try {
@@ -485,7 +514,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
-
   void showError(String message) {
     if (!_isSnackBarShown) {
       _isSnackBarShown = true;
@@ -495,7 +523,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     }
   }
 
-
   @override
   void dispose() {
     _dcNoController.dispose();
@@ -504,7 +531,6 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     _delQtyController.dispose();
     super.dispose();
   }
-
 
   @override
   void initState() {
@@ -674,7 +700,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                             ),
                           ),
                           decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16.w, vertical: 8.h),
                             border: InputBorder.none,
                             hintText: "Click camera to scan DC Number",
                             hintStyle: GoogleFonts.dmSans(
