@@ -283,15 +283,17 @@ class _GoodsInwardState extends State<GoodsInward> {
   // Method to increment the Doc ID number
   String incrementDocId(String currentId) {
     List<String> parts = currentId.split('/');
-    if (parts.length < 3) {
-      // Handle unexpected format, return original or handle error
-      return currentId;
+    if (parts.length < 3) return currentId; // Handle unexpected format
+
+    try {
+      int sequence = int.parse(parts.last);
+      sequence++;
+      parts[parts.length - 1] =
+          sequence.toString().padLeft(1, '0'); // No padding if not needed
+      return parts.join('/');
+    } catch (e) {
+      return currentId; // Fallback if parsing fails
     }
-    String sequenceStr = parts.last;
-    int sequence = int.tryParse(sequenceStr) ?? 0;
-    sequence++;
-    parts[parts.length - 1] = sequence.toString().padLeft(1, '0');
-    return parts.join('/');
   }
 
   void showErrorSnackBar(String message) {
@@ -335,22 +337,30 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
 
     final bc = Barcode.code128();
-    final barcode = bc.make(data, width: 300, height: 100);
+    final svg = bc.toSvg(data, width: 300, height: 100);
 
-    // Create white background image
+    // Parse the SVG and render to an image
     final image = img.Image(width: 300, height: 100);
     img.fill(image, color: img.ColorRgb8(255, 255, 255));
 
-    // Draw black bars
+    // Get the barcode rectangles
+    final barcode = bc.make(data, width: 300, height: 100);
+
+    // Draw black bars with proper positioning
     for (final rect in barcode) {
-      img.fillRect(
-        image,
-        x1: rect.left.toInt(),
-        y1: rect.top.toInt(),
-        x2: (rect.left + rect.width).toInt(),
-        y2: (rect.top + rect.height).toInt(),
-        color: img.ColorRgb8(0, 0, 0),
-      );
+      if (rect.left >= 0 &&
+          rect.top >= 0 &&
+          rect.left + rect.width <= 300 &&
+          rect.top + rect.height <= 100) {
+        img.fillRect(
+          image,
+          x1: rect.left.toInt(),
+          y1: rect.top.toInt(),
+          x2: (rect.left + rect.width).toInt(),
+          y2: (rect.top + rect.height).toInt(),
+          color: img.ColorRgb8(0, 0, 0),
+        );
+      }
     }
 
     return img.encodePng(image);
