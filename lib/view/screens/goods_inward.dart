@@ -282,11 +282,16 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   // Method to increment the Doc ID number
   String incrementDocId(String currentId) {
-    final prefix = currentId.replaceAll(RegExp(r'\d'), '');
-    final numberPart = currentId.replaceAll(RegExp(r'\D'), '');
-    final number = int.tryParse(numberPart) ?? 0;
-    final nextNumber = number + 1;
-    return '$prefix${nextNumber.toString().padLeft(4, '0')}';
+    List<String> parts = currentId.split('/');
+    if (parts.length < 3) {
+      // Handle unexpected format, return original or handle error
+      return currentId;
+    }
+    String sequenceStr = parts.last;
+    int sequence = int.tryParse(sequenceStr) ?? 0;
+    sequence++;
+    parts[parts.length - 1] = sequence.toString().padLeft(1, '0');
+    return parts.join('/');
   }
 
   void showErrorSnackBar(String message) {
