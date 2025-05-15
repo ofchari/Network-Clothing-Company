@@ -180,41 +180,67 @@ class _GoodsOutwardState extends State<GoodsOutward> {
 
   TextEditingController docIdController = TextEditingController();
 
+  // Future<String> incrementDocId(String docId) async {
+  //   try {
+  //     // Get the fixed middle segment from user preferences
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final fixedMiddle =
+  //         prefs.getString('finYear') ?? '25'; // Default to 25 if not set
+  //
+  //     // Split the DocID into parts using '/'
+  //     final parts = docId.split('/');
+  //
+  //     if (parts.length != 3) {
+  //       throw FormatException('Invalid DocID format');
+  //     }
+  //
+  //     // Parse the last part as integer
+  //     int lastNumber = int.parse(parts[2]);
+  //
+  //     // Increment and preserve padding
+  //     final newLast = (lastNumber + 1).toString().padLeft(parts[2].length, '0');
+  //
+  //     // Reconstruct with fixed middle segment
+  //     return '${parts[0]}/$fixedMiddle/$newLast';
+  //   } catch (e) {
+  //     debugPrint('Error incrementing DocID: $e');
+  //     return docId;
+  //   }
+  // }
+
+  /// Update fetchAndSetDocId to use fixed middle segment
+
+// Update these methods in the GoodsOutward class
+
+// Remove the old incrementDocId function and replace with this single version
   String incrementDocId(String docId) {
     try {
-      // Split the DocID into parts using '/'
-      final parts = docId.split('/');
+      List<String> parts = docId.split('/');
+      if (parts.length < 3) return docId;
 
-      if (parts.length != 3) {
-        throw FormatException('Invalid DocID format');
-      }
+      // Keep original padding length
+      int paddingLength = parts[2].length;
 
-      // Parse the last part as integer
-      int lastNumber = int.parse(parts[2]);
+      // Parse and increment number
+      int sequence = int.parse(parts[2]);
+      sequence++;
 
-      // Increment and preserve padding
-      final newLast = (lastNumber + 1).toString().padLeft(parts[2].length, '0');
-
-      // Reconstruct the DocID with incremented last part
-      return '${parts[0]}/${parts[1]}/$newLast';
+      // Rebuild with padding
+      return '${parts[0]}/${parts[1]}/${sequence.toString().padLeft(paddingLength, '0')}';
     } catch (e) {
-      // Fallback to original ID if parsing fails
       debugPrint('Error incrementing DocID: $e');
       return docId;
     }
   }
 
-  // Fetch DOCID and increment it automatically when the screen loads
+// Update fetchAndSetDocId to use the single increment function
   Future<void> fetchAndSetDocId() async {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
 
-    if (serverIp.isEmpty || port.isEmpty) {
-      showErrorSnackBar('Server configuration missing');
-      return;
-    }
+    if (serverIp.isEmpty || port.isEmpty) return;
 
     final String url =
         'http://$serverIp:$port/get_docid_out_api?USERNAME=$username';
@@ -223,21 +249,19 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data.isNotEmpty) {
-          final currentDocId = data[0]['DOCID'] as String;
+        if (data.isNotEmpty && data[0]['DOCID'] != null) {
+          final serverDocId = data[0]['DOCID'] as String;
 
-          // Validate DocID format before incrementing
-          if (!_isValidDocId(currentDocId)) {
-            throw FormatException('Invalid DocID format from server');
-          }
+          // Increment the server-provided DOCID for display
+          final displayedDocId = incrementDocId(serverDocId);
 
           setState(() {
-            docIdController.text = incrementDocId(currentDocId);
+            docIdController.text = displayedDocId;
           });
         }
       }
     } catch (e) {
-      showErrorSnackBar('Error fetching DocID: ${e.toString()}');
+      showErrorSnackBar('Error fetching DOCID: $e');
     }
   }
 
@@ -390,6 +414,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         storedDcNumbers.add(scannedDcNo);
         await prefs.setStringList(storedDcNumbersKey, storedDcNumbers);
+
+        // Remove local increment logic and replace with:
+        await fetchAndSetDocId(); // Get fresh DOCID from server
 
         int currentNumber = int.parse(match.group(1)!);
         String prefix = currentDocId.substring(

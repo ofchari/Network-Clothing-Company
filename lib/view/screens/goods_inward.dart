@@ -232,67 +232,80 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   TextEditingController docIdController = TextEditingController();
 
-  /// Fetch DOCID and increment it automatically when the screen loads ///
+// Add this at the top of your class
+  static const String fixedFinancialYear = '25';
+
+// // Modified incrementDocId method
+//   String incrementDocId(String currentId) {
+//     try {
+//       List<String> parts = currentId.split('/');
+//       if (parts.length < 3) return currentId;
+//
+//       // Force middle segment to be fixed financial year
+//       parts[1] = fixedFinancialYear;
+//
+//       // Increment the last numeric part
+//       int sequence = int.parse(parts.last);
+//       sequence++;
+//       parts[parts.length - 1] =
+//           sequence.toString().padLeft(parts.last.length, '0');
+//
+//       return parts.join('/');
+//     } catch (e) {
+//       return currentId;
+//     }
+//   }
+
+  /// Modified fetchAndSetDocId method
+// Replace the existing fetchAndSetDocId with this
   Future<void> fetchAndSetDocId() async {
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
 
-    if (serverIp.isEmpty || port.isEmpty) {
-      debugPrint('Error: Server IP or port is not configured.');
-      return;
-    }
+    if (serverIp.isEmpty || port.isEmpty) return;
 
     final String url =
         'http://$serverIp:$port/get_docid_api?USERNAME=$username';
 
     try {
       final response = await http.get(Uri.parse(url));
-
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        print(response.body);
-
+        final data = json.decode(response.body);
         if (data.isNotEmpty && data[0]['DOCID'] != null) {
-          final String currentDocId = data[0]['DOCID'];
+          final serverDocId = data[0]['DOCID'] as String;
 
-          // Increment logic
-          final String incrementedDocId = incrementDocId(currentDocId);
+          // Increment the server-provided DOCID for display
+          final displayedDocId = incrementDocId(serverDocId);
 
           setState(() {
-            docIdController.text = incrementedDocId;
+            docIdController.text = displayedDocId;
           });
-        } else {
-          // If no DOCID returned, fallback to default
-          setState(() {
-            docIdController.text = "GI0001";
-          });
-          showErrorSnackBar('No DOCID found. Set to default GI0001.');
         }
-      } else {
-        showErrorSnackBar(
-          'Failed to fetch DOCID. Status code: ${response.statusCode}',
-        );
       }
     } catch (e) {
       showErrorSnackBar('Error fetching DOCID: $e');
     }
   }
 
-  // Method to increment the Doc ID number
   String incrementDocId(String currentId) {
-    List<String> parts = currentId.split('/');
-    if (parts.length < 3) return currentId; // Handle unexpected format
-
     try {
-      int sequence = int.parse(parts.last);
+      List<String> parts = currentId.split('/');
+      if (parts.length < 3) return currentId;
+
+      // Keep original padding length
+      int paddingLength = parts[2].length;
+
+      // Parse and increment number
+      int sequence = int.parse(parts[2]);
       sequence++;
-      parts[parts.length - 1] =
-          sequence.toString().padLeft(1, '0'); // No padding if not needed
-      return parts.join('/');
+
+      // Rebuild with padding
+      return '${parts[0]}/${parts[1]}/${sequence.toString().padLeft(paddingLength, '0')}';
     } catch (e) {
-      return currentId; // Fallback if parsing fails
+      debugPrint('Error incrementing DocID: $e');
+      return currentId;
     }
   }
 
@@ -371,7 +384,6 @@ class _GoodsInwardState extends State<GoodsInward> {
     HttpClient client = HttpClient();
     client.badCertificateCallback =
         (X509Certificate cert, String host, int port) => true;
-
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
@@ -524,6 +536,9 @@ class _GoodsInwardState extends State<GoodsInward> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         storedDuplicates.add(newCombination);
         await prefs.setStringList('posted_combinations', storedDuplicates);
+
+        // Remove the local increment logic and replace with:
+        await fetchAndSetDocId(); // Get fresh DOCID from server
 
         setState(() {
           String currentDocId = docIdController.text;

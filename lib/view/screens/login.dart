@@ -16,7 +16,7 @@ class _LoginState extends State<Login> {
   late double width;
   @override
   Widget build(BuildContext context) {
-     /// Define Sizes //
+    /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
@@ -25,39 +25,36 @@ class _LoginState extends State<Login> {
         width: width.w,
         child: Column(
           children: [
-            SizedBox(height: 50.h,),
+            SizedBox(
+              height: 50.h,
+            ),
             FutureBuilder(
                 future: fetchInward(),
-                builder: (context,snapshot){
-                  if(snapshot.connectionState == ConnectionState.waiting){
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
-                  }
-                  else if(snapshot.hasError){
+                  } else if (snapshot.hasError) {
                     return Text("${snapshot.error}");
-                  }
-                  else{
+                  } else {
                     return Expanded(
                         child: ListView.builder(
-                          itemCount: snapshot.data!.length,
-                            itemBuilder: (context ,index){
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, index) {
                               Data outs = snapshot.data![index];
-                            // print("${outs.type}");
-                            //   print("${outs.type}");
-                            //   print("${outs.type}");
-                            return Column(
-                              children: [
-                                SizedBox(height: 50.h,),
-                                // Text(outs.type.toString()),
-
-                              ],
-                            );
-                            }
-                        )
-                    );
+                              // print("${outs.type}");
+                              //   print("${outs.type}");
+                              //   print("${outs.type}");
+                              return Column(
+                                children: [
+                                  SizedBox(
+                                    height: 50.h,
+                                  ),
+                                  // Text(outs.type.toString()),
+                                ],
+                              );
+                            }));
                   }
-                }
-            )
-
+                })
           ],
         ),
       ),
