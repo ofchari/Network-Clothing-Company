@@ -766,12 +766,12 @@ class _GoodsInwardState extends State<GoodsInward> {
             ),
           ),
           ElevatedButton(
-            child: const Text('Close'),
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[300],
               foregroundColor: Colors.black,
             ),
+            child: const Text('Close'),
           ),
         ],
       ),
