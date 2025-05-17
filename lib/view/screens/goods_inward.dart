@@ -3,14 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:barcode/barcode.dart'; // Added for barcode generation
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
@@ -134,12 +133,19 @@ class _GoodsInwardState extends State<GoodsInward> {
 
   ///  Get Api's method for Doc Id's //
   Future<void> fetchDocIds() async {
+    setState(() {
+      isLoading = true;
+    });
+
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
 
     if (serverIp.isEmpty || port.isEmpty) {
       debugPrint('Error: Server IP or port is not configured.');
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -153,7 +159,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         var rawData = response.body.trim(); // Trim whitespace and newlines
         rawData =
             rawData.replaceAll(RegExp(r'\]\['), ','); // Fix malformed JSON
-        print(response.body);
+        print('Raw Response: ${response.body}');
 
         try {
           final data = json.decode(rawData);
@@ -161,31 +167,51 @@ class _GoodsInwardState extends State<GoodsInward> {
             setState(() {
               docIds = List<Map<String, dynamic>>.from(data);
               filteredDocIds = docIds;
+              isLoading = false;
             });
             debugPrint('Fetched ${docIds.length} records successfully.');
           } else {
             debugPrint('Unexpected data format. Expected a List, got: $data');
+            setState(() {
+              isLoading = false;
+            });
           }
         } catch (jsonError) {
           debugPrint('JSON Parsing Error after cleaning: $jsonError');
+          setState(() {
+            isLoading = false;
+          });
         }
       } else {
         debugPrint('Failed to fetch data. Status Code: ${response.statusCode}');
         debugPrint('Response Body: ${response.body}');
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (networkError) {
       debugPrint('Network Error: $networkError');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   /// Pass the Docid and get the other details ///
   Future<void> fetchDocDetails(String docId) async {
+    setState(() {
+      isLoading = true;
+    });
+
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
 
     if (serverIp.isEmpty || port.isEmpty) {
       debugPrint('Error: Server IP or port is not configured.');
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -213,58 +239,58 @@ class _GoodsInwardState extends State<GoodsInward> {
             setState(() {
               gstController.text = docDetails['GST'] ?? '';
               typeController.text = docDetails['PTYPE'] ?? '';
-              party.text = docDetails['PARTYMASID'].toString();
+              party.text = docDetails['PARTYMASID']?.toString() ?? '';
               partyNameController.text = docDetails['PARTYID'] ?? '';
+              isLoading = false;
             });
           } else {
             debugPrint('Unexpected data format: $docDetails');
+            setState(() {
+              isLoading = false;
+            });
           }
         } else {
           debugPrint('Expected a List but got: $data');
+          setState(() {
+            isLoading = false;
+          });
         }
       } else {
         debugPrint('Failed to fetch details. Status: ${response.statusCode}');
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (error) {
       debugPrint('Error fetching details: $error');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   TextEditingController docIdController = TextEditingController();
 
-// Add this at the top of your class
+  // Add this at the top of your class
   static const String fixedFinancialYear = '25';
 
-// // Modified incrementDocId method
-//   String incrementDocId(String currentId) {
-//     try {
-//       List<String> parts = currentId.split('/');
-//       if (parts.length < 3) return currentId;
-//
-//       // Force middle segment to be fixed financial year
-//       parts[1] = fixedFinancialYear;
-//
-//       // Increment the last numeric part
-//       int sequence = int.parse(parts.last);
-//       sequence++;
-//       parts[parts.length - 1] =
-//           sequence.toString().padLeft(parts.last.length, '0');
-//
-//       return parts.join('/');
-//     } catch (e) {
-//       return currentId;
-//     }
-//   }
-
   /// Modified fetchAndSetDocId method
-// Replace the existing fetchAndSetDocId with this
   Future<void> fetchAndSetDocId() async {
+    setState(() {
+      isLoading = true;
+    });
+
     final prefs = await SharedPreferences.getInstance();
     final serverIp = prefs.getString('serverIp') ?? '';
     final port = prefs.getString('port') ?? '';
     final username = prefs.getString('username') ?? '';
 
-    if (serverIp.isEmpty || port.isEmpty) return;
+    if (serverIp.isEmpty || port.isEmpty) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
 
     final String url =
         'http://$serverIp:$port/get_docid_api?USERNAME=$username';
@@ -281,11 +307,25 @@ class _GoodsInwardState extends State<GoodsInward> {
 
           setState(() {
             docIdController.text = displayedDocId;
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            isLoading = false;
           });
         }
+      } else {
+        showErrorSnackBar(
+            'Failed to fetch DOCID. Status: ${response.statusCode}');
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (e) {
       showErrorSnackBar('Error fetching DOCID: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -331,10 +371,12 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
   // Method to extract the prefix (e.g., "Eag") from fetchsetdocid
-  String extractUsCode(String fetchAndSetDocId) {
+  String extractUsCode(String docId) {
+    if (docId.isEmpty) return '';
+
     final RegExp regex =
-        RegExp(r'^(\w+)(?=/)'); // Matches the prefix before the first "/"
-    final match = regex.firstMatch(fetchAndSetDocId);
+        RegExp(r'^([A-Za-z]+)(?=/)'); // Matches the prefix before the first "/"
+    final match = regex.firstMatch(docId);
 
     if (match != null) {
       return match.group(1)!; // Return the extracted prefix
@@ -342,45 +384,21 @@ class _GoodsInwardState extends State<GoodsInward> {
     return ''; // Return empty string if no match is found
   }
 
-  /// Function to generate barcode as PNG bytes ///
-
-  Uint8List generateBarcodePng(String data) {
-    if (data.isEmpty) {
-      throw Exception('Barcode data cannot be empty');
-    }
-
+  /// Function to generate barcode as PNG bytes with improved quality ///
+  Uint8List generateBarcodeSvgBytes(String data) {
+    // This is only needed if you still want to generate raw bytes for some reason
+    // For example, if you need to use it with a different rendering approach
     final bc = Barcode.code128();
     final svg = bc.toSvg(data, width: 300, height: 100);
-
-    // Parse the SVG and render to an image
-    final image = img.Image(width: 300, height: 100);
-    img.fill(image, color: img.ColorRgb8(255, 255, 255));
-
-    // Get the barcode rectangles
-    final barcode = bc.make(data, width: 300, height: 100);
-
-    // Draw black bars with proper positioning
-    for (final rect in barcode) {
-      if (rect.left >= 0 &&
-          rect.top >= 0 &&
-          rect.left + rect.width <= 300 &&
-          rect.top + rect.height <= 100) {
-        img.fillRect(
-          image,
-          x1: rect.left.toInt(),
-          y1: rect.top.toInt(),
-          x2: (rect.left + rect.width).toInt(),
-          y2: (rect.top + rect.height).toInt(),
-          color: img.ColorRgb8(0, 0, 0),
-        );
-      }
-    }
-
-    return img.encodePng(image);
+    return Uint8List.fromList(utf8.encode(svg));
   }
 
   /// Post method for Goods Inward with Barcode Generation //
   Future<void> MobileDocument(BuildContext context) async {
+    setState(() {
+      isLoading = true;
+    });
+
     HttpClient client = HttpClient();
     client.badCertificateCallback =
         (X509Certificate cert, String host, int port) => true;
@@ -399,7 +417,12 @@ class _GoodsInwardState extends State<GoodsInward> {
           actions: [
             ElevatedButton(
               child: const Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  isLoading = false;
+                });
+              },
             ),
           ],
         ),
@@ -407,14 +430,28 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
-    final party1 = partyNameController.text;
-    final DCNO = dcnumber.text;
+    final partyName = partyNameController.text;
+    final dcNum = dcnumber.text;
 
     final storedDuplicates = prefs.getStringList('posted_combinations') ?? [];
-    final newCombination = '$party1|$DCNO';
+    final newCombination = '$partyName|$dcNum';
+
+    if (docIdController.text.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Document ID is missing. Please refresh and try again.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
 
     String lastNumber = extractNumericPart(docIdController.text);
-    String usCode = extractUsCode(fetchAndSetDocId.toString() ?? '');
+    String usCode = extractUsCode(docIdController.text);
 
     if (storedDuplicates.contains(newCombination)) {
       Get.snackbar(
@@ -424,6 +461,9 @@ class _GoodsInwardState extends State<GoodsInward> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -433,14 +473,12 @@ class _GoodsInwardState extends State<GoodsInward> {
       'Content-Type': 'application/json',
     };
 
-    setState(() {
-      fetchAndSetDocId();
-      print(docIdController.text);
-    });
+    final String postedDocId = docIdController.text; // Store before any changes
 
     String formattedDateTime =
         DateFormat('yyyy-MM-ddHH:mm:ss').format(DateTime.now());
 
+    // Validation checks
     if (dcnumber.text.trim().isEmpty) {
       Get.snackbar(
         "Error",
@@ -449,6 +487,9 @@ class _GoodsInwardState extends State<GoodsInward> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -460,22 +501,39 @@ class _GoodsInwardState extends State<GoodsInward> {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
     if (delQty.text.trim().isEmpty || int.tryParse(delQty.text) == null) {
       Get.snackbar(
         "Error",
-        "Grn is required",
+        "Grn is required and must be a number",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
-    final String postedDocId =
-        docIdController.text; // Capture DocId before posting
+    if (partyNameController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Party Name is required",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
 
     final data = {
       "CANCEL": "F",
@@ -503,7 +561,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       "ATIME": formattedDateTime.substring(11), // Extract only time part
       "ITIME": formattedDateTime,
       "FINYEAR": "/25/", // Kept as /25/ for consistency
-      "DOCID": docIdController.text,
+      "DOCID": postedDocId, // Use the captured DocId
       "SUPP": supp.text,
       "USERID": username,
       "NPARTY": nParty.text,
@@ -514,12 +572,12 @@ class _GoodsInwardState extends State<GoodsInward> {
       "RECID": recId.text,
       "DOCMAXNO": lastNumber,
       "DPREFIX": "$usCode/25",
-      "DOCID1": docIdController.text,
+      "DOCID1": postedDocId, // Use the captured DocId
       "USCODE": usCode,
       "DELREQ": delReq.text,
       "DOCIDOLD": searchController.text,
       "PARTY1": partyNameController.text,
-      "DUPCHK1": "${partyNameController.text}${dcnumber.text}/24/",
+      "DUPCHK1": "${partyNameController.text}${dcnumber.text}/25/",
     };
 
     print('Request Data: $data');
@@ -531,30 +589,15 @@ class _GoodsInwardState extends State<GoodsInward> {
         headers: headers,
         body: jsonEncode(data),
       );
-      print(response.body);
+      print('Response: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Add to stored duplicates
         storedDuplicates.add(newCombination);
         await prefs.setStringList('posted_combinations', storedDuplicates);
 
-        // Remove the local increment logic and replace with:
-        await fetchAndSetDocId(); // Get fresh DOCID from server
-
-        setState(() {
-          String currentDocId = docIdController.text;
-          final regex = RegExp(r'(\d+)$');
-          final match = regex.firstMatch(currentDocId);
-
-          if (match != null) {
-            String lastNumber = match.group(0)!;
-            int incrementedNumber = int.parse(lastNumber) + 1;
-            String newDocId = currentDocId.replaceFirst(
-                lastNumber, incrementedNumber.toString());
-
-            docIdController.text = newDocId;
-            fetchAndSetDocId();
-          }
-        });
+        // Get fresh DOCID from server after successful post
+        await fetchAndSetDocId();
 
         Get.snackbar(
           "Success",
@@ -565,67 +608,12 @@ class _GoodsInwardState extends State<GoodsInward> {
         );
 
         // Show Barcode Dialog after successful post
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Barcode'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.memory(
-                  generateBarcodePng(postedDocId),
-                  width: 300,
-                  height: 100,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  postedDocId,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            actions: [
-              ElevatedButton.icon(
-                onPressed: () => _printBarcode(postedDocId),
-                icon: const Icon(Icons.print),
-                label: const Text("Print"),
-              ),
-              ElevatedButton(
-                child: const Text('Close'),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-        );
+        showBarcodeDialog(context, postedDocId);
 
-        dcnumber.clear();
-        delQty.clear();
-        typeController.clear();
-        stmUser.clear();
-        remarks.clear();
-        dinWno.clear();
-        dinWby.clear();
-        toDept.clear();
-        supp.clear();
-        nParty.clear();
-        podcChk.clear();
-        gstController.clear();
-        gstYn.clear();
-        recId.clear();
-        delReq.clear();
-        partyNameController.clear();
-        searchController.clear();
-        dcnumber.clear();
-        _dateController.clear();
-        selectedDocId = '';
-        docIds.clear();
-        filteredDocIds.clear();
+        // Clear all fields after successful submission
+        clearAllFields();
 
-        fetchAndSetDocId();
+        // Refresh document IDs
         fetchDocIds();
       } else if (response.statusCode == 417) {
         final responseJson = json.decode(response.body);
@@ -642,7 +630,12 @@ class _GoodsInwardState extends State<GoodsInward> {
             actions: [
               ElevatedButton(
                 child: const Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    isLoading = false;
+                  });
+                },
               ),
             ],
           ),
@@ -658,6 +651,9 @@ class _GoodsInwardState extends State<GoodsInward> {
         );
         print('Error: ${response.statusCode}');
         print('Response Body: $responseBody');
+        setState(() {
+          isLoading = false;
+        });
       }
     } catch (error) {
       print('Exception: $error');
@@ -669,7 +665,12 @@ class _GoodsInwardState extends State<GoodsInward> {
           actions: [
             ElevatedButton(
               child: const Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  isLoading = false;
+                });
+              },
             ),
           ],
         ),
@@ -677,11 +678,113 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-  /// Function to print the Barcode as PDF ///
+  /// Clear all form fields
+  void clearAllFields() {
+    setState(() {
+      searchController.clear();
+      gstController.clear();
+      typeController.clear();
+      partyNameController.clear();
+      _dateController.clear();
+      delQty.clear();
+      remarks.clear();
+      dinWno.clear();
+      dinWby.clear();
+      toDept.clear();
+      supp.clear();
+      nParty.clear();
+      podcChk.clear();
+      gstYn.clear();
+      recId.clear();
+      delReq.clear();
+      dcnumber.clear();
+      party.clear();
+
+      // Clear the filtered results
+      selectedDocId = null;
+      filteredDocIds = [];
+
+      isLoading = false;
+    });
+  }
+
+  void showBarcodeDialog(BuildContext context, String docId) {
+    if (docId.isEmpty) {
+      print("Error: Empty DocID for barcode");
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Barcode',
+          style: GoogleFonts.dmSans(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 300,
+              height: 150,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: BarcodeWidget(
+                barcode: Barcode.code128(),
+                data: docId,
+                width: 300,
+                height: 100,
+                drawText: false,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              docId,
+              style: GoogleFonts.dmSans(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => _printBarcode(docId),
+            icon: const Icon(Icons.print),
+            label: const Text("Print"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+            ),
+          ),
+          ElevatedButton(
+            child: const Text('Close'),
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[300],
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// 4. Replace your _printBarcode method with this improved version
   Future<void> _printBarcode(String data) async {
     final pdf = pw.Document();
-    final imageBytes = generateBarcodePng(data);
-    final image = pw.MemoryImage(imageBytes);
+
+    // Generate SVG barcode directly for PDF
+    final barcode = Barcode.code128();
+    final svg = barcode.toSvg(data, width: 300, height: 100);
 
     pdf.addPage(
       pw.Page(
@@ -689,12 +792,12 @@ class _GoodsInwardState extends State<GoodsInward> {
           return pw.Column(
             mainAxisAlignment: pw.MainAxisAlignment.center,
             children: [
-              pw.Center(child: pw.Image(image, width: 300, height: 100)),
+              pw.SvgImage(svg: svg),
               pw.SizedBox(height: 16),
               pw.Text(
                 data,
                 style: pw.TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: pw.FontWeight.bold,
                 ),
                 textAlign: pw.TextAlign.center,
