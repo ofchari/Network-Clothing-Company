@@ -131,7 +131,7 @@ class _GoodsInwardState extends State<GoodsInward> {
     }
   }
 
-  ///  Get Api's method for Doc Id's //
+  ///  Get Api's method for Doc Id's ///
   Future<void> fetchDocIds() async {
     setState(() {
       isLoading = true;
@@ -778,31 +778,51 @@ class _GoodsInwardState extends State<GoodsInward> {
     );
   }
 
-// 4. Replace your _printBarcode method with this improved version
+  /// 4. Replace your _printBarcode method with this improved version
   Future<void> _printBarcode(String data) async {
     final pdf = pw.Document();
 
-    // Generate SVG barcode directly for PDF
+    // Convert mm to points (1 mm = 2.83465 points)
+    const widthMm = 100.0; // Width per barcode
+    const heightMm = 28.0; // Height per barcode
+    const widthPoints = widthMm * 2.83465;
+    const heightPoints = heightMm * 2.83465;
+
+    // Generate two identical barcodes (or modify if needed)
     final barcode = Barcode.code128();
-    final svg = barcode.toSvg(data, width: 300, height: 100);
+    final svg1 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
+    final svg2 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
 
     pdf.addPage(
       pw.Page(
+        // Set page width to fit two barcodes side by side (with some margin)
+        pageFormat:
+            const PdfPageFormat((widthPoints * 2) + 40, heightPoints + 40),
         build: (pw.Context context) {
-          return pw.Column(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            children: [
-              pw.SvgImage(svg: svg),
-              pw.SizedBox(height: 16),
-              pw.Text(
-                data,
-                style: pw.TextStyle(
-                  fontSize: 20,
-                  fontWeight: pw.FontWeight.bold,
+          return pw.Center(
+            child: pw.Column(
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
+                pw.Row(
+                  // <-- Use Row to place barcodes side by side
+                  mainAxisAlignment: pw.MainAxisAlignment.center,
+                  children: [
+                    pw.SvgImage(svg: svg1),
+                    pw.SizedBox(width: 10), // Small gap between barcodes
+                    pw.SvgImage(svg: svg2),
+                  ],
                 ),
-                textAlign: pw.TextAlign.center,
-              ),
-            ],
+                pw.SizedBox(height: 16),
+                pw.Text(
+                  data,
+                  style: pw.TextStyle(
+                    fontSize: 20,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -812,6 +832,39 @@ class _GoodsInwardState extends State<GoodsInward> {
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
+//   Future<void> _printBarcode(String data) async {
+//     final pdf = pw.Document();
+//
+//     // Generate SVG barcode directly for PDF
+//     final barcode = Barcode.code128();
+//     final svg = barcode.toSvg(data, width: 300, height: 100);
+//
+//     pdf.addPage(
+//       pw.Page(
+//         build: (pw.Context context) {
+//           return pw.Column(
+//             mainAxisAlignment: pw.MainAxisAlignment.center,
+//             children: [
+//               pw.SvgImage(svg: svg),
+//               pw.SizedBox(height: 16),
+//               pw.Text(
+//                 data,
+//                 style: pw.TextStyle(
+//                   fontSize: 20,
+//                   fontWeight: pw.FontWeight.bold,
+//                 ),
+//                 textAlign: pw.TextAlign.center,
+//               ),
+//             ],
+//           );
+//         },
+//       ),
+//     );
+//
+//     await Printing.layoutPdf(
+//       onLayout: (PdfPageFormat format) async => pdf.save(),
+//     );
+//   }
 
   @override
   Widget build(BuildContext context) {
