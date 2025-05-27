@@ -782,33 +782,32 @@ class _GoodsInwardState extends State<GoodsInward> {
   Future<void> _printBarcode(String data) async {
     final pdf = pw.Document();
 
-    // Convert mm to points (1 mm = 2.83465 points)
-    const widthMm = 100.0; // Width per barcode
-    const heightMm = 28.0; // Height per barcode
+    // Dimensions (100mm x 28mm per barcode)
+    const widthMm = 100.0;
+    const heightMm = 28.0;
     const widthPoints = widthMm * 2.83465;
     const heightPoints = heightMm * 2.83465;
 
-    // Generate two identical barcodes (or modify if needed)
+    // Generate two barcodes
     final barcode = Barcode.code128();
     final svg1 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
     final svg2 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
 
     pdf.addPage(
       pw.Page(
-        // Set page width to fit two barcodes side by side (with some margin)
+        // Page width = 2 barcodes + gap (20 points) + margins (40 points)
         pageFormat:
-            const PdfPageFormat((widthPoints * 2) + 40, heightPoints + 40),
+            const PdfPageFormat((widthPoints * 2) + 60, heightPoints + 40),
         build: (pw.Context context) {
           return pw.Center(
             child: pw.Column(
               mainAxisSize: pw.MainAxisSize.min,
               children: [
                 pw.Row(
-                  // <-- Use Row to place barcodes side by side
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
                     pw.SvgImage(svg: svg1),
-                    pw.SizedBox(width: 10), // Small gap between barcodes
+                    pw.SizedBox(width: 20), // Increased gap to 20 points (~7mm)
                     pw.SvgImage(svg: svg2),
                   ],
                 ),
@@ -828,9 +827,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+    await Printing.layoutPdf(onLayout: (_) => pdf.save());
   }
 //   Future<void> _printBarcode(String data) async {
 //     final pdf = pw.Document();
