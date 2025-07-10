@@ -607,8 +607,12 @@ class _GoodsInwardState extends State<GoodsInward> {
           colorText: Colors.white,
         );
 
-        // Show Barcode Dialog after successful post
-        showBarcodeDialog(context, postedDocId);
+        final responseJson = json.decode(response.body);
+        final String gateInMasId =
+            responseJson["GATEINMASID"]?.toString() ?? postedDocId;
+
+// Show Barcode Dialog after successful post
+        showBarcodeDialog(context, gateInMasId, postedDocId);
 
         // Clear all fields after successful submission
         clearAllFields();
@@ -708,9 +712,10 @@ class _GoodsInwardState extends State<GoodsInward> {
     });
   }
 
-  void showBarcodeDialog(BuildContext context, String docId) {
-    if (docId.isEmpty) {
-      print("Error: Empty DocID for barcode");
+  void showBarcodeDialog(
+      BuildContext context, String gateInMasId, String docId) {
+    if (gateInMasId.isEmpty) {
+      print("Error: Empty GATEINMASID for barcode");
       return;
     }
 
@@ -738,7 +743,7 @@ class _GoodsInwardState extends State<GoodsInward> {
               ),
               child: BarcodeWidget(
                 barcode: Barcode.code128(),
-                data: docId,
+                data: gateInMasId, // updated barcode data
                 width: 300,
                 height: 100,
                 drawText: false,
@@ -746,7 +751,7 @@ class _GoodsInwardState extends State<GoodsInward> {
             ),
             const SizedBox(height: 16),
             Text(
-              docId,
+              docId, // Display DOCID below
               style: GoogleFonts.dmSans(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -757,7 +762,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         ),
         actions: [
           ElevatedButton.icon(
-            onPressed: () => _printBarcode(docId),
+            onPressed: () => _printBarcode(gateInMasId, docId),
             icon: const Icon(Icons.print),
             label: const Text("Print"),
             style: ElevatedButton.styleFrom(
@@ -779,23 +784,22 @@ class _GoodsInwardState extends State<GoodsInward> {
   }
 
   /// 4. Replace your _printBarcode method with this improved version
-  Future<void> _printBarcode(String data) async {
+  Future<void> _printBarcode(String barcodeData, String docId) async {
     final pdf = pw.Document();
 
-    // Dimensions (100mm x 28mm per barcode)
     const widthMm = 100.0;
     const heightMm = 28.0;
     const widthPoints = widthMm * 2.83465;
     const heightPoints = heightMm * 2.83465;
 
-    // Generate two barcodes
     final barcode = Barcode.code128();
-    final svg1 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
-    final svg2 = barcode.toSvg(data, width: widthPoints, height: heightPoints);
+    final svg1 =
+        barcode.toSvg(barcodeData, width: widthPoints, height: heightPoints);
+    final svg2 =
+        barcode.toSvg(barcodeData, width: widthPoints, height: heightPoints);
 
     pdf.addPage(
       pw.Page(
-        // Page width = 2 barcodes + gap (20 points) + margins (40 points)
         pageFormat:
             const PdfPageFormat((widthPoints * 2) + 60, heightPoints + 40),
         build: (pw.Context context) {
@@ -807,13 +811,13 @@ class _GoodsInwardState extends State<GoodsInward> {
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
                     pw.SvgImage(svg: svg1),
-                    pw.SizedBox(width: 20), // Increased gap to 20 points (~7mm)
+                    pw.SizedBox(width: 20),
                     pw.SvgImage(svg: svg2),
                   ],
                 ),
                 pw.SizedBox(height: 16),
                 pw.Text(
-                  data,
+                  docId, // show DOCID below barcode
                   style: pw.TextStyle(
                     fontSize: 20,
                     fontWeight: pw.FontWeight.bold,
@@ -829,39 +833,6 @@ class _GoodsInwardState extends State<GoodsInward> {
 
     await Printing.layoutPdf(onLayout: (_) => pdf.save());
   }
-//   Future<void> _printBarcode(String data) async {
-//     final pdf = pw.Document();
-//
-//     // Generate SVG barcode directly for PDF
-//     final barcode = Barcode.code128();
-//     final svg = barcode.toSvg(data, width: 300, height: 100);
-//
-//     pdf.addPage(
-//       pw.Page(
-//         build: (pw.Context context) {
-//           return pw.Column(
-//             mainAxisAlignment: pw.MainAxisAlignment.center,
-//             children: [
-//               pw.SvgImage(svg: svg),
-//               pw.SizedBox(height: 16),
-//               pw.Text(
-//                 data,
-//                 style: pw.TextStyle(
-//                   fontSize: 20,
-//                   fontWeight: pw.FontWeight.bold,
-//                 ),
-//                 textAlign: pw.TextAlign.center,
-//               ),
-//             ],
-//           );
-//         },
-//       ),
-//     );
-//
-//     await Printing.layoutPdf(
-//       onLayout: (PdfPageFormat format) async => pdf.save(),
-//     );
-//   }
 
   @override
   Widget build(BuildContext context) {
