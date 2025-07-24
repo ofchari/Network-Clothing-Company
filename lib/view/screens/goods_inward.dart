@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,9 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:ncc/view/widgets/text.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GoodsInward extends StatefulWidget {
@@ -43,6 +42,14 @@ class _GoodsInwardState extends State<GoodsInward> {
   TextEditingController partyNameController = TextEditingController();
   final _dateController = TextEditingController();
   String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+  // Add these new variables for IDPRTC printer
+  List<BluetoothDevice> devices = [];
+  BluetoothDevice? selectedDevice;
+  BluetoothCharacteristic? writeCharacteristic;
+  // 1. ADD THESE VARIABLES (after existing variables around line 40)
+  bool isScanning = false;
+  bool isConnecting = false;
 
   // Get the current date and time
   DateTime now = DateTime.now();
@@ -113,6 +120,8 @@ class _GoodsInwardState extends State<GoodsInward> {
     fetchAndSetDocId();
     fetchDocIds();
     fetchDeviceId();
+    // ADD THIS LINE:
+    initBluetooth();
   }
 
   /// Showing IMEI Number ///
@@ -344,7 +353,7 @@ class _GoodsInwardState extends State<GoodsInward> {
       // Rebuild with padding
       return '${parts[0]}/${parts[1]}/${sequence.toString().padLeft(paddingLength, '0')}';
     } catch (e) {
-      debugPrint('Error incrementing DocID: $e');
+      debugPrint('Error incrementing DocID: Blockquotee');
       return currentId;
     }
   }
@@ -391,6 +400,239 @@ class _GoodsInwardState extends State<GoodsInward> {
     final bc = Barcode.code128();
     final svg = bc.toSvg(data, width: 300, height: 100);
     return Uint8List.fromList(utf8.encode(svg));
+  }
+
+  // Add IDPRTC printer initialization
+  Future<void> initBluetooth() async {
+    try {
+      // Check if Bluetooth is available
+      if (await FlutterBluePlus.isAvailable == false) {
+        debugPrint("Bluetooth not available on this device");
+        return;
+      }
+
+      // Request permissions
+      await Permission.bluetoothScan.request();
+      await Permission.bluetoothConnect.request();
+      await Permission.locationWhenInUse.request();
+
+      if (await Permission.bluetoothScan.isGranted &&
+          await Permission.bluetoothConnect.isGranted &&
+          await Permission.locationWhenInUse.isGranted) {
+        // Start scanning
+        setState(() {
+          isScanning = true;
+        });
+
+        FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+
+        FlutterBluePlus.scanResults.listen((results) {
+          for (ScanResult r in results) {
+            if (!devices.contains(r.device) && r.device.name.isNotEmpty) {
+              setState(() {
+                devices.add(r.device);
+              });
+            }
+          }
+        });
+
+        // Stop scanning after timeout
+        await Future.delayed(const Duration(seconds: 10));
+        FlutterBluePlus.stopScan();
+        setState(() {
+          isScanning = false;
+        });
+      } else {
+        debugPrint("Bluetooth permissions not granted");
+      }
+    } catch (e) {
+      debugPrint("Error initializing Bluetooth: $e");
+      setState(() {
+        isScanning = false;
+      });
+    }
+  }
+
+// 5. REPLACE the existing connectToDevice method:
+  Future<void> connectToDevice(BluetoothDevice device) async {
+    setState(() {
+      isConnecting = true;
+    });
+
+    try {
+      await FlutterBluePlus.stopScan();
+
+      // Disconnect if already connected
+      try {
+        await device.disconnect();
+      } catch (_) {}
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Connect to device
+      await device.connect(autoConnect: false);
+
+      setState(() {
+        selectedDevice = device;
+      });
+
+      // Discover services and find write characteristic
+      List<BluetoothService> services = await device.discoverServices();
+      for (var service in services) {
+        for (var c in service.characteristics) {
+          if (c.properties.write) {
+            setState(() {
+              writeCharacteristic = c;
+            });
+            debugPrint("Found write characteristic: ${c.uuid}");
+            break;
+          }
+        }
+        if (writeCharacteristic != null) break;
+      }
+
+      if (writeCharacteristic != null) {
+        Get.snackbar(
+          "Success",
+          "Connected to ${device.name}",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      debugPrint("Connection error: $e");
+      Get.snackbar(
+        "Error",
+        "Failed to connect to ${device.name}: $e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() {
+        isConnecting = false;
+      });
+    }
+  }
+
+// 6. ADD this new method to show printer selection dialog:
+  void showPrinterSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Bluetooth Printer'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: Column(
+            children: [
+              if (selectedDevice != null)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Connected: ${selectedDevice!.name}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Available Devices:'),
+                  ElevatedButton.icon(
+                    onPressed: isScanning ? null : initBluetooth,
+                    icon: isScanning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.refresh),
+                    label: Text(isScanning ? 'Scanning...' : 'Scan'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: devices.isEmpty
+                    ? const Center(
+                        child: Text('No devices found. Tap Scan to search.'))
+                    : ListView.builder(
+                        itemCount: devices.length,
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          final isConnected = selectedDevice?.id == device.id;
+
+                          return ListTile(
+                            leading: Icon(
+                              Icons.print,
+                              color: isConnected ? Colors.green : Colors.grey,
+                            ),
+                            title: Text(
+                              device.name.isNotEmpty
+                                  ? device.name
+                                  : 'Unknown Device',
+                              style: TextStyle(
+                                fontWeight: isConnected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            subtitle: Text(device.id.toString()),
+                            trailing: isConnecting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : isConnected
+                                    ? const Icon(Icons.check_circle,
+                                        color: Colors.green)
+                                    : const Icon(Icons.arrow_forward_ios),
+                            onTap: isConnecting
+                                ? null
+                                : () => connectToDevice(device),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Function to generate barcode as ZPL command with IDPRTC printer ///
+  String generateBarcodeZPL(String data) {
+    // Generate ZPL barcode command for the gateInMasId
+    return '''
+^XA
+^FO50,50
+^BY2,3,100
+^BCN,100,Y,N,N
+^FD$data^FS
+^XZ
+''';
   }
 
   /// Post method for Goods Inward with Barcode Generation //
@@ -610,9 +852,25 @@ class _GoodsInwardState extends State<GoodsInward> {
         final responseJson = json.decode(response.body);
         final String gateInMasId =
             responseJson["GATEINMASID"]?.toString() ?? postedDocId;
+        final String createdOn =
+            responseJson["CREATEDON"]?.toString() ?? formattedDateTime;
 
-// Show Barcode Dialog after successful post
-        showBarcodeDialog(context, gateInMasId, postedDocId);
+        // Automatically print barcode using IDPRTC printer instead of showing dialog
+        if (selectedDevice != null && writeCharacteristic != null) {
+          _printIDPRTCBarcode(gateInMasId, postedDocId, createdOn)
+              .catchError((e) {
+            Get.snackbar(
+              "Error",
+              "Failed to print barcode: $e",
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          });
+        } else {
+          // Show barcode dialog if printer not connected
+          showBarcodeDialog(context, gateInMasId, createdOn, postedDocId);
+        }
 
         // Clear all fields after successful submission
         clearAllFields();
@@ -712,8 +970,8 @@ class _GoodsInwardState extends State<GoodsInward> {
     });
   }
 
-  void showBarcodeDialog(
-      BuildContext context, String gateInMasId, String docId) {
+  void showBarcodeDialog(BuildContext context, String gateInMasId,
+      String createdOn, String docId) {
     if (gateInMasId.isEmpty) {
       print("Error: Empty GATEINMASID for barcode");
       return;
@@ -741,12 +999,15 @@ class _GoodsInwardState extends State<GoodsInward> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: BarcodeWidget(
-                barcode: Barcode.code128(),
-                data: gateInMasId, // updated barcode data
-                width: 300,
-                height: 100,
-                drawText: false,
+              child: Center(
+                child: Text(
+                  gateInMasId, // Show the barcode data as text
+                  style: GoogleFonts.dmSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -762,7 +1023,7 @@ class _GoodsInwardState extends State<GoodsInward> {
         ),
         actions: [
           ElevatedButton.icon(
-            onPressed: () => _printBarcode(gateInMasId, docId),
+            onPressed: () => _printIDPRTCBarcode(gateInMasId, docId, createdOn),
             icon: const Icon(Icons.print),
             label: const Text("Print"),
             style: ElevatedButton.styleFrom(
@@ -783,55 +1044,98 @@ class _GoodsInwardState extends State<GoodsInward> {
     );
   }
 
-  /// 4. Replace your _printBarcode method with this improved version
-  Future<void> _printBarcode(String barcodeData, String docId) async {
-    final pdf = pw.Document();
+  /// Replace PDF printing with IDPRTC ZPL printing
+  Future<void> _printIDPRTCBarcode(
+      String barcodeData, String docId, String createdOn) async {
+    if (selectedDevice == null || writeCharacteristic == null) {
+      Get.snackbar(
+        "Error",
+        "Printer not connected. Please connect to a Bluetooth printer first.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      debugPrint("Printer not connected");
+      return;
+    }
 
-    const widthMm = 100.0;
-    const heightMm = 28.0;
-    const widthPoints = widthMm * 2.83465;
-    const heightPoints = heightMm * 2.83465;
+    try {
+      // Parse UTC time and convert to IST (UTC +5:30)
+      final parsedUtc = DateTime.parse(createdOn);
+      final istTime = parsedUtc.add(const Duration(hours: 5, minutes: 30));
 
-    final barcode = Barcode.code128();
-    final svg1 =
-        barcode.toSvg(barcodeData, width: widthPoints, height: heightPoints);
-    final svg2 =
-        barcode.toSvg(barcodeData, width: widthPoints, height: heightPoints);
+      final formattedDate =
+          "${istTime.day.toString().padLeft(2, '0')}-${istTime.month.toString().padLeft(2, '0')}-${istTime.year} "
+          "${istTime.hour.toString().padLeft(2, '0')}:${istTime.minute.toString().padLeft(2, '0')}:${istTime.second.toString().padLeft(2, '0')}";
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat:
-            const PdfPageFormat((widthPoints * 2) + 60, heightPoints + 40),
-        build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Column(
-              mainAxisSize: pw.MainAxisSize.min,
-              children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
-                  children: [
-                    pw.SvgImage(svg: svg1),
-                    pw.SizedBox(width: 20),
-                    pw.SvgImage(svg: svg2),
-                  ],
-                ),
-                pw.SizedBox(height: 16),
-                pw.Text(
-                  docId, // show DOCID below barcode
-                  style: pw.TextStyle(
-                    fontSize: 20,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+      final String zplCommand = '''
+^XA
+^MMT
+^PW800
+^LL350
+^LS0
 
-    await Printing.layoutPdf(onLayout: (_) => pdf.save());
+~SD15
+^FO50,30
+^BY3,3,100
+^BCN,100,Y,N,N
+^FD$barcodeData^FS
+
+^FO50,160
+^A0N,22,22
+^FD$formattedDate^FS
+
+^FO50,200
+^A0N,22,22
+^FD$docId^FS
+
+^FO450,30
+^BY3,3,100
+^BCN,100,Y,N,N
+^FD$barcodeData^FS
+
+^FO450,160
+^A0N,22,22
+^FD$formattedDate^FS
+
+^FO450,200
+^A0N,22,22
+^FD$docId^FS
+
+^XZ
+''';
+
+      debugPrint("ZPL Command: $zplCommand");
+      await writeDataInChunks(utf8.encode(zplCommand), chunkSize: 64);
+      debugPrint("Barcode sent to printer");
+
+      Get.snackbar(
+        "Success",
+        "Barcode sent to printer successfully!",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to print barcode: $e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      debugPrint("Print error: $e");
+    }
+  }
+
+  Future<void> writeDataInChunks(List<int> data,
+      {required int chunkSize}) async {
+    for (int i = 0; i < data.length; i += 20) {
+      final chunk =
+          data.sublist(i, i + 20 > data.length ? data.length : i + 20);
+      await writeCharacteristic!.write(chunk, withoutResponse: true);
+      await Future.delayed(Duration(milliseconds: 100));
+    }
   }
 
   @override
@@ -1372,6 +1676,53 @@ class _GoodsInwardState extends State<GoodsInward> {
               ),
               SizedBox(
                 height: 15.h,
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: height / 15.2.h,
+                        decoration: BoxDecoration(
+                          color: selectedDevice != null
+                              ? Colors.green.shade100
+                              : Colors.grey.shade200,
+                          border: Border.all(
+                            color: selectedDevice != null
+                                ? Colors.green
+                                : Colors.grey.shade500,
+                          ),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.print,
+                            color: selectedDevice != null
+                                ? Colors.green
+                                : Colors.grey.shade700,
+                            size: 20,
+                          ),
+                          title: Text(
+                            selectedDevice != null
+                                ? 'Connected: ${selectedDevice!.name}'
+                                : 'No Printer Selected',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: selectedDevice != null
+                                  ? Colors.green.shade800
+                                  : Colors.black87,
+                            ),
+                          ),
+                          trailing:
+                              const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: showPrinterSelectionDialog,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               GestureDetector(
                   onTap: () {
