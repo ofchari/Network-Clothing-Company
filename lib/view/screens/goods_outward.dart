@@ -587,383 +587,649 @@ class _GoodsOutwardState extends State<GoodsOutward> {
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
+
+    // Responsive breakpoints
+    bool isTablet = width > 600;
+    bool isLargeScreen = width > 900;
+
     return Scaffold(
-      backgroundColor: const Color(0xfff1f2f4),
+      backgroundColor: const Color(0xfff8fafc),
       appBar: AppBar(
         title: const Subhead(
           text: "Gate Outward",
-          weight: FontWeight.w500,
+          weight: FontWeight.w600,
           color: Colors.black,
         ),
         centerTitle: true,
-        toolbarHeight: 70.h,
-        backgroundColor: const Color(0xfff1f2f4),
+        toolbarHeight: isTablet ? 80.h : 70.h,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.grey.withOpacity(0.1),
       ),
-      body: SizedBox(
-        width: width.w,
-        child: SingleChildScrollView(
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeScreen ? 32.w : (isTablet ? 24.w : 16.w),
+            vertical: 8.h,
+          ),
           child: Column(
             children: [
-              SizedBox(height: 10.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "     Exporter :",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 5.h),
-              Container(
-                height: height / 15.h,
-                width: width / 1.09.w,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+              // Main content area - expandable
+              Expanded(
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    side: BorderSide(color: Colors.grey.shade200, width: 1),
                   ),
-                  decoration: InputDecoration(
-                    labelText: "NETWORK CLOTHING COMPANY PRIVATED LIMITED",
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.home_work_outlined,
-                      color: Colors.black,
-                      size: 16,
-                    ),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "    Gate Dc No ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h),
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade500),
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  // controller: _dcDateController,
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: docIdController.text,
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.dashboard_customize_rounded,
-                      color: Colors.black,
-                      size: 17.5,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 13.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "   Dc No ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h),
-              // Updated TextFormField widget:
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  height: height / 15.h,
-                  width: width / 1.13.w,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(
-                      color: Colors.grey.shade500,
-                    ),
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _dcNoController,
-                          readOnly: true,
-                          style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16.w, vertical: 8.h),
-                            border: InputBorder.none,
-                            hintText: "Click camera to scan DC Number",
-                            hintStyle: GoogleFonts.dmSans(
-                              fontSize: 13.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          spreadRadius: 0,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(isTablet ? 24.w : 20.w),
+                      child: SingleChildScrollView(
+                        child: _buildResponsiveContent(isTablet, isLargeScreen),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.grey.shade700,
-                          size: 20,
-                        ),
-                        onPressed: () => openMobileScanner(),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
 
-              SizedBox(height: 13.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "    Dc Date ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h),
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade500),
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  controller: _dcDateController,
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: "",
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.dashboard_customize_rounded,
-                      color: Colors.black,
-                      size: 17.5,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 13.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "     Party ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h),
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  border: Border.all(color: Colors.grey.shade500),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  controller: _partyController,
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: "",
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.data_exploration_outlined,
-                      color: Colors.black,
-                      size: 17.5,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 13.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "     Delqty ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h), // Add this variable to toggle edit mode.
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  border: Border.all(color: Colors.grey.shade500),
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _delQtyController,
-                        style: GoogleFonts.dmSans(
-                          textStyle: TextStyle(
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                        ),
-                        decoration: InputDecoration(
-                          labelText: "",
-                          labelStyle: GoogleFonts.sora(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.delete,
-                            color: Colors.black,
-                            size: 17.5,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        isEditable ? Icons.check : Icons.edit,
-                        // Change icon based on mode.
-                        color: Colors.green,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isEditable = !isEditable; // Toggle edit mode.
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 13.h),
-              const Align(
-                alignment: Alignment.topLeft,
-                child: MyText(
-                  text: "    Stm User ",
-                  weight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: 7.5.h),
-              Container(
-                height: height / 15.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade500),
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6.r),
-                ),
-                child: TextFormField(
-                  // controller: stmUser,
-                  initialValue: deviceId,
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                    textStyle: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: "",
-                    labelStyle: GoogleFonts.sora(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.desktop_mac,
-                      color: Colors.black,
-                      size: 17.5,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 15.h),
-              GestureDetector(
-                onTap: () {
-                  MobileDocument(context);
-                },
-                child: Buttons(
-                  height: height / 18.h,
-                  width: width / 2,
-                  radius: BorderRadius.circular(7),
-                  color: Colors.blue,
-                  text: "Submit",
-                ),
-              ),
-              SizedBox(height: 15.h),
+              SizedBox(height: 16.h),
+
+              // Submit button - fixed at bottom
+              _buildSubmitButton(isTablet, isLargeScreen),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResponsiveContent(bool isTablet, bool isLargeScreen) {
+    double sectionSpacing = isTablet ? 18.h : 14.h;
+
+    if (isLargeScreen) {
+      // Two-column layout for large screens
+      return Column(
+        children: [
+          // First row - Exporter (full width)
+          _buildExporterField(isTablet),
+          SizedBox(height: sectionSpacing),
+
+          // Second row - Gate DC and DC No
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildGateDcField(isTablet),
+              ),
+              SizedBox(width: 20.w),
+              Expanded(
+                child: _buildDcNoField(isTablet),
+              ),
+            ],
+          ),
+          SizedBox(height: sectionSpacing),
+
+          // Third row - DC Date and Party
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildDcDateField(isTablet),
+              ),
+              SizedBox(width: 20.w),
+              Expanded(
+                child: _buildPartyField(isTablet),
+              ),
+            ],
+          ),
+          SizedBox(height: sectionSpacing),
+
+          // Fourth row - Delqty and Stm User
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildDelQtyField(isTablet),
+              ),
+              SizedBox(width: 20.w),
+              Expanded(
+                child: _buildStmUserField(isTablet),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Single column layout for mobile and tablets
+      return Column(
+        children: [
+          _buildExporterField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildGateDcField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildDcNoField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildDcDateField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildPartyField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildDelQtyField(isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildStmUserField(isTablet),
+        ],
+      );
+    }
+  }
+
+  Widget _buildExporterField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Exporter",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            readOnly: true,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              labelText: "NETWORK CLOTHING COMPANY PRIVATED LIMITED",
+              labelStyle: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.home_work_outlined,
+                  color: Colors.blue.shade600,
+                  size: 18.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGateDcField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Gate DC No",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            readOnly: true,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              labelText: docIdController.text,
+              labelStyle: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.dashboard_customize_rounded,
+                  color: Colors.green.shade600,
+                  size: 18.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDcNoField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "DC No",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.orange.shade600,
+                  size: 18.w,
+                ),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: _dcNoController,
+                  readOnly: true,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Click camera to scan DC Number",
+                    hintStyle: GoogleFonts.dmSans(
+                      fontSize: 13.sp,
+                      color: Colors.grey[500],
+                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(right: 8.w),
+                child: IconButton(
+                  icon: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.orange.shade700,
+                      size: 20.w,
+                    ),
+                  ),
+                  onPressed: () => openMobileScanner(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDcDateField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "DC Date",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            controller: _dcDateController,
+            readOnly: true,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: "DC Date",
+              hintStyle: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                color: Colors.grey[500],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: Colors.purple.shade600,
+                  size: 18.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPartyField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Party",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            controller: _partyController,
+            readOnly: true,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: "Party Name",
+              hintStyle: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                color: Colors.grey[500],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.business,
+                  color: Colors.teal.shade600,
+                  size: 18.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDelQtyField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Delivery Quantity",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: isEditable ? Colors.blue.shade300 : Colors.grey.shade300,
+              width: isEditable ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.inventory,
+                  color: Colors.red.shade600,
+                  size: 18.w,
+                ),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: _delQtyController,
+                  readOnly: !isEditable,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Enter Quantity",
+                    hintStyle: GoogleFonts.dmSans(
+                      fontSize: 13.sp,
+                      color: Colors.grey[500],
+                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(right: 8.w),
+                child: IconButton(
+                  icon: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: isEditable ? Colors.green.shade100 : Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Icon(
+                      isEditable ? Icons.check : Icons.edit,
+                      color: isEditable ? Colors.green.shade700 : Colors.blue.shade700,
+                      size: 20.w,
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      isEditable = !isEditable;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStmUserField(bool isTablet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "System User",
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: isTablet ? 56.h : 52.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            initialValue: deviceId,
+            readOnly: true,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: "System User ID",
+              hintStyle: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                color: Colors.grey[500],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.desktop_mac,
+                  color: Colors.indigo.shade600,
+                  size: 18.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton(bool isTablet, bool isLargeScreen) {
+    return GestureDetector(
+      onTap: () {
+        MobileDocument(context);
+      },
+      child: Container(
+        height: isTablet ? 56.h : 50.h,
+        width: isLargeScreen ? (width / 3).w : (width / 2).w,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade600, Colors.blue.shade700],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              spreadRadius: 0,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            "Submit",
+            style: GoogleFonts.dmSans(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

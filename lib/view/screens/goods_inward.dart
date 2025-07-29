@@ -12,9 +12,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
-import 'package:ncc/view/widgets/text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -1158,587 +1156,680 @@ class _GoodsInwardState extends State<GoodsInward> {
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
-    return Scaffold(
-        backgroundColor: const Color(0xfff1f2f4),
-        appBar: AppBar(
-          title: const Subhead(
-            text: "Gate Inward",
-            weight: FontWeight.w500,
-            color: Colors.black,
-          ),
-          centerTitle: true,
-          toolbarHeight: 70.h,
-          backgroundColor: const Color(0xfff1f2f4),
-        ),
-        body: SizedBox(
-          width: width.w,
-          child: SingleChildScrollView(
-            child: Column(children: [
-              SizedBox(
-                height: 10.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Exporter :",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.09.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "NETWORK CLOTHING COMPANY PRIVATE LIMITED",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.home_work_outlined,
-                        color: Colors.black,
-                        size: 16,
-                      ),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 13.h,
-              ),
-              Align(
-                alignment: Alignment.topLeft,
-                child: Text('    Doc ID:',
-                    style: GoogleFonts.dmSans(
-                        fontWeight: FontWeight.w500, fontSize: 16)),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: docIdController.text,
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.security_update_good_rounded,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 14.5.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Po/Dc No ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              const SizedBox(height: 10),
-              Container(
-                  height: height / 15.2.h,
-                  width: width / 1.13.w,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: TextFormField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.grey.shade700,
-                        size: 20,
-                      ),
-                      hintText: "Type to search Po/Dc No",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 10),
-                    ),
-                    onChanged: (text) {
-                      setState(() {
-                        if (text.isEmpty) {
-                          filteredDocIds =
-                              []; // Clear suggestions when text is empty
-                        } else {
-                          filteredDocIds = docIds.where((doc) {
-                            final docId = doc['DOCID']?.toString() ?? '';
-                            return docId
-                                .toLowerCase()
-                                .contains(text.toLowerCase());
-                          }).toList();
-                        }
-                      });
-                    },
-                  )),
-              const SizedBox(height: 10),
-              if (searchController.text.isNotEmpty && filteredDocIds.isNotEmpty)
-                Container(
-                  height: 150,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: ListView.builder(
-                    itemCount: filteredDocIds.length + (isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == filteredDocIds.length) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
 
-                      final doc = filteredDocIds[index];
-                      return ListTile(
-                        title: Text(doc['DOCID']),
-                        onTap: () async {
-                          searchController.text = doc[
-                              'DOCID']; // Update the TextFormField with the selected DOCID
-                          await fetchDocDetails(doc[
-                              'DOCID']); // Fetch details for the selected DocID
-                          setState(() {
-                            filteredDocIds =
-                                []; // Clear the suggestions list explicitly
-                          });
-                        },
-                      );
-                    },
+    // Responsive breakpoints
+    bool isTablet = width > 600;
+    bool isLargeScreen = width > 900;
+
+    return Scaffold(
+      backgroundColor: const Color(0xfff8fafc),
+      appBar: AppBar(
+        title: const Subhead(
+          text: "Gate Inward",
+          weight: FontWeight.w600,
+          color: Colors.black,
+        ),
+        centerTitle: true,
+        toolbarHeight: isTablet ? 80.h : 70.h,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.grey.withOpacity(0.1),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isLargeScreen ? 32.w : (isTablet ? 24.w : 16.w),
+            vertical: 8.h,
+          ),
+          child: Column(
+            children: [
+              // Main content area - expandable
+              Expanded(
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    side: BorderSide(color: Colors.grey.shade200, width: 1),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          spreadRadius: 0,
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(isTablet ? 24.w : 20.w),
+                      child: SingleChildScrollView(
+                        child: _buildResponsiveContent(isTablet, isLargeScreen),
+                      ),
+                    ),
                   ),
                 ),
-              SizedBox(
-                height: 14.5.h,
               ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     GST No ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  controller: gstController,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.security_update_good_rounded,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 14.5.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Type ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  controller: typeController,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.merge_type,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 14.5.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Party Name ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  controller: partyNameController,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      prefixIcon: Icon(
-                        Icons.data_exploration_outlined,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 14.5.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "      DC No/Dt",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Container(
-                      height: height / 15.2.h,
-                      width: width / 2.2.w,
-                      decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          border: Border.all(color: Colors.grey.shade500),
-                          borderRadius: BorderRadius.circular(6.r)),
-                      child: TextFormField(
-                        controller: dcnumber,
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black)),
-                        decoration: InputDecoration(
-                            labelText: "",
-                            labelStyle: GoogleFonts.sora(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.data_exploration_outlined,
-                              color: Colors.grey.shade700,
-                              size: 17.5,
-                            ),
-                            contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                            border: InputBorder.none),
-                      ),
-                    ),
-                    Container(
-                      height: height / 15.2.h,
-                      width: width / 2.2.w,
-                      decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          border: Border.all(color: Colors.grey.shade500),
-                          borderRadius: BorderRadius.circular(6.r)),
-                      child: TextFormField(
-                        controller: _dateController,
-                        onTap: () async {
-                          DateTime? pickedDate = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (pickedDate != null) {
-                            _dateController.text =
-                                DateFormat('yyyy-MM-dd').format(pickedDate);
-                          }
-                        },
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black)),
-                        decoration: InputDecoration(
-                            labelText: "Date",
-                            labelStyle: GoogleFonts.sora(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.date_range,
-                              color: Colors.grey.shade700,
-                              size: 17.5,
-                            ),
-                            border: InputBorder.none),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 14.5.h,
-              ),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Time",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  readOnly: true,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: currentTime,
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.alarm,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(height: 14.5.h),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Grn qty ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  controller: delQty,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.merge_type,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(height: 14.5.h),
-              const Align(
-                  alignment: Alignment.topLeft,
-                  child: MyText(
-                      text: "     Stm User ",
-                      weight: FontWeight.w500,
-                      color: Colors.black)),
-              SizedBox(
-                height: 7.5.h,
-              ),
-              Container(
-                height: height / 15.2.h,
-                width: width / 1.13.w,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    border: Border.all(color: Colors.grey.shade500),
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: TextFormField(
-                  initialValue: deviceId,
-                  style: GoogleFonts.dmSans(
-                      textStyle: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black)),
-                  decoration: InputDecoration(
-                      labelText: "",
-                      labelStyle: GoogleFonts.sora(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.desktop_mac,
-                        color: Colors.grey.shade700,
-                        size: 17.5,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 1.h),
-                      border: InputBorder.none),
-                ),
-              ),
-              SizedBox(
-                height: 15.h,
-              ),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: height / 15.2.h,
-                        decoration: BoxDecoration(
-                          color: selectedDevice != null
-                              ? Colors.green.shade100
-                              : Colors.grey.shade200,
-                          border: Border.all(
-                            color: selectedDevice != null
-                                ? Colors.green
-                                : Colors.grey.shade500,
-                          ),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.print,
-                            color: selectedDevice != null
-                                ? Colors.green
-                                : Colors.grey.shade700,
-                            size: 20,
-                          ),
-                          title: Text(
-                            selectedDevice != null
-                                ? 'Connected: ${selectedDevice!.name}'
-                                : 'No Printer Selected',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                              color: selectedDevice != null
-                                  ? Colors.green.shade800
-                                  : Colors.black87,
-                            ),
-                          ),
-                          trailing:
-                              const Icon(Icons.arrow_forward_ios, size: 16),
-                          onTap: showPrinterSelectionDialog,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                  onTap: () {
-                    MobileDocument(context);
-                  },
-                  child: Buttons(
-                      height: height / 18.h,
-                      width: width / 2.w,
-                      radius: BorderRadius.circular(7),
-                      color: Colors.blue,
-                      text: "Submit")),
-              SizedBox(
-                height: 15.h,
-              ),
-            ]),
+
+              SizedBox(height: 12.h),
+
+              // Bottom section - fixed height
+              _buildBottomSection(isTablet, isLargeScreen),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResponsiveContent(bool isTablet, bool isLargeScreen) {
+    // Adjust spacing based on screen size
+    double sectionSpacing = isTablet ? 20.h : 16.h;
+    double fieldSpacing = isTablet ? 12.h : 8.h;
+
+    if (isLargeScreen) {
+      // Two-column layout for large screens
+      return Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildDocIdSection(fieldSpacing),
+                    SizedBox(height: sectionSpacing),
+                    _buildSearchSection(fieldSpacing),
+                    SizedBox(height: sectionSpacing),
+                    _buildInputField(
+                      label: 'GST Number',
+                      controller: gstController,
+                      icon: Icons.receipt_long,
+                      iconColor: Colors.orange,
+                      isCompact: true,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 24.w),
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildInputField(
+                      label: 'Type',
+                      controller: typeController,
+                      icon: Icons.merge_type,
+                      iconColor: Colors.purple,
+                      isCompact: true,
+                    ),
+                    SizedBox(height: sectionSpacing),
+                    _buildInputField(
+                      label: 'Party Name',
+                      controller: partyNameController,
+                      icon: Icons.business,
+                      iconColor: Colors.teal,
+                      isCompact: true,
+                    ),
+                    SizedBox(height: sectionSpacing),
+                    _buildDcSection(fieldSpacing, isCompact: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: sectionSpacing),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInputField(
+                  label: 'GRN Quantity',
+                  controller: delQty,
+                  icon: Icons.inventory,
+                  iconColor: Colors.brown,
+                  keyboardType: TextInputType.number,
+                  isCompact: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Single column layout for mobile and small tablets
+      return Column(
+        children: [
+          _buildDocIdSection(fieldSpacing),
+          SizedBox(height: sectionSpacing),
+          _buildSearchSection(fieldSpacing),
+          SizedBox(height: sectionSpacing),
+          _buildInputField(
+            label: 'GST Number',
+            controller: gstController,
+            icon: Icons.receipt_long,
+            iconColor: Colors.orange,
+            isCompact: isTablet,
+          ),
+          SizedBox(height: sectionSpacing),
+          _buildInputField(
+            label: 'Type',
+            controller: typeController,
+            icon: Icons.merge_type,
+            iconColor: Colors.purple,
+            isCompact: isTablet,
+          ),
+          SizedBox(height: sectionSpacing),
+          _buildInputField(
+            label: 'Party Name',
+            controller: partyNameController,
+            icon: Icons.business,
+            iconColor: Colors.teal,
+            isCompact: isTablet,
+          ),
+          SizedBox(height: sectionSpacing),
+          _buildDcSection(fieldSpacing, isCompact: isTablet),
+          SizedBox(height: sectionSpacing),
+          _buildInputField(
+            label: 'GRN Quantity',
+            controller: delQty,
+            icon: Icons.inventory,
+            iconColor: Colors.brown,
+            keyboardType: TextInputType.number,
+            isCompact: isTablet,
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildDocIdSection(double fieldSpacing) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Document ID',
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 16.sp,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: fieldSpacing),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: TextFormField(
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              labelText: docIdController.text,
+              labelStyle: GoogleFonts.dmSans(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+                color: Colors.grey[600],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.security_update_good_rounded,
+                  color: Colors.blue.shade600,
+                  size: 20.w,
+                ),
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchSection(double fieldSpacing) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PO/DC Number',
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 16.sp,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: fieldSpacing),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: searchController,
+            decoration: InputDecoration(
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.search,
+                  color: Colors.green.shade600,
+                  size: 20.w,
+                ),
+              ),
+              hintText: "Search PO/DC Number",
+              hintStyle: GoogleFonts.dmSans(
+                fontSize: 14.sp,
+                color: Colors.grey[500],
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+            onChanged: (text) {
+              setState(() {
+                if (text.isEmpty) {
+                  filteredDocIds = [];
+                } else {
+                  filteredDocIds = docIds.where((doc) {
+                    final docId = doc['DOCID']?.toString() ?? '';
+                    return docId.toLowerCase().contains(text.toLowerCase());
+                  }).toList();
+                }
+              });
+            },
+          ),
+        ),
+
+        // Search Results Dropdown
+        if (searchController.text.isNotEmpty && filteredDocIds.isNotEmpty)
+          Container(
+            margin: EdgeInsets.only(top: 8.h),
+            constraints: BoxConstraints(maxHeight: 150.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.15),
+                  spreadRadius: 0,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: filteredDocIds.length + (isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == filteredDocIds.length) {
+                  return Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final doc = filteredDocIds[index];
+                return InkWell(
+                  onTap: () async {
+                    searchController.text = doc['DOCID'];
+                    await fetchDocDetails(doc['DOCID']);
+                    setState(() {
+                      filteredDocIds = [];
+                    });
+                  },
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                    decoration: BoxDecoration(
+                      border: index != filteredDocIds.length - 1
+                          ? Border(
+                              bottom: BorderSide(color: Colors.grey.shade200))
+                          : null,
+                    ),
+                    child: Text(
+                      doc['DOCID'],
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDcSection(double fieldSpacing, {bool isCompact = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'DC Number & Date',
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 16.sp,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: fieldSpacing),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.08),
+                      spreadRadius: 0,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: dcnumber,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "DC Number",
+                    hintStyle: GoogleFonts.dmSans(
+                      fontSize: 14.sp,
+                      color: Colors.grey[500],
+                    ),
+                    prefixIcon: Container(
+                      margin: EdgeInsets.all(12.w),
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.shade50,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Icons.assignment,
+                        color: Colors.indigo.shade600,
+                        size: 18.w,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                        vertical: isCompact ? 14.h : 16.h, horizontal: 16.w),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.08),
+                      spreadRadius: 0,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _dateController,
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      _dateController.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
+                    }
+                  },
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Select Date",
+                    hintStyle: GoogleFonts.dmSans(
+                      fontSize: 14.sp,
+                      color: Colors.grey[500],
+                    ),
+                    prefixIcon: Container(
+                      margin: EdgeInsets.all(12.w),
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Icons.calendar_today,
+                        color: Colors.red.shade600,
+                        size: 18.w,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                        vertical: isCompact ? 14.h : 16.h, horizontal: 16.w),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomSection(bool isTablet, bool isLargeScreen) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Printer selection
+        Container(
+          height: isTablet ? 60.h : 55.h,
+          decoration: BoxDecoration(
+            color: selectedDevice != null
+                ? Colors.green.shade50
+                : Colors.grey.shade50,
+            border: Border.all(
+              color: selectedDevice != null
+                  ? Colors.green.shade300
+                  : Colors.grey.shade300,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: ListTile(
+            leading: Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: selectedDevice != null
+                    ? Colors.green.shade100
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(
+                Icons.print,
+                color: selectedDevice != null
+                    ? Colors.green.shade700
+                    : Colors.grey.shade600,
+                size: 20.w,
+              ),
+            ),
+            title: Text(
+              selectedDevice != null
+                  ? 'Connected: ${selectedDevice!.name}'
+                  : 'No Printer Selected',
+              style: GoogleFonts.dmSans(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: selectedDevice != null
+                    ? Colors.green.shade800
+                    : Colors.grey.shade700,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16.w,
+              color: Colors.grey.shade600,
+            ),
+            onTap: showPrinterSelectionDialog,
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Submit button
+        GestureDetector(
+          onTap: () {
+            MobileDocument(context);
+          },
+          child: Container(
+            height: isTablet ? 56.h : 50.h,
+            width: isLargeScreen ? (width / 3).w : (width / 2).w,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade600, Colors.blue.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  spreadRadius: 0,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                "Submit",
+                style: GoogleFonts.dmSans(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+// Helper method for input fields
+  Widget _buildInputField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    required Color iconColor,
+    TextInputType? keyboardType,
+    bool isCompact = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.dmSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 16.sp,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: isCompact ? 6.h : 8.h),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: GoogleFonts.dmSans(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: "Enter $label",
+              hintStyle: GoogleFonts.dmSans(
+                fontSize: 14.sp,
+                color: Colors.grey[500],
+              ),
+              prefixIcon: Container(
+                margin: EdgeInsets.all(12.w),
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor.withOpacity(0.8),
+                  size: 20.w,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                  vertical: isCompact ? 14.h : 16.h, horizontal: 16.w),
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

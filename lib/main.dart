@@ -1,11 +1,12 @@
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:ncc/view/screens/form.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ncc/view/screens/form.dart';
+import 'package:ncc/view/screens/goods_inward.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await Hive.openBox('docIdsBox');
@@ -22,20 +23,20 @@ class MyApp extends StatelessWidget {
       designSize: const Size(390, 844),
       splitScreenMode: true,
       minTextAdapt: true,
-      builder: (context ,child){
-        return  GetMaterialApp(
-          title: 'Ncc',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            useMaterial3: true,
-          ),
-          home: AnimatedSplashScreen(
-              splash: Image.asset("assets/ncc.png"),
-              splashIconSize: 200,
-              duration: 2000,
-              nextScreen: const FormIp())
-        );
+      builder: (context, child) {
+        return GetMaterialApp(
+            title: 'Ncc',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              useMaterial3: true,
+            ),
+            home: AnimatedSplashScreen(
+                splash: Image.asset("assets/ncc.png"),
+                splashIconSize: 200,
+                duration: 2000,
+                nextScreen: const FormIp())
+            );
       },
     );
   }
