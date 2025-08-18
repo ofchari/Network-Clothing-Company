@@ -4,8 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ncc/view/screens/goods_inward.dart';
 import 'package:ncc/view/screens/goods_outward.dart';
-import 'package:ncc/view/screens/reports.dart';
-import 'package:ncc/view/screens/reportsout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form.dart';
@@ -70,183 +68,344 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget _smallBuildLayout() {
-    /// Define Sizes //
     var size = MediaQuery.of(context).size;
     height = size.height;
     width = size.width;
+
     return Scaffold(
-      body: SizedBox(
-        width: width.w,
-        child: Column(
-          children: [
-            SizedBox(
-              height: 60.h,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SizedBox(
-                  width: 50.w,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0, right: 12.0),
-                  child: Container(
-                    height: height / 12.1.h,
-                    width: width / 3.w,
-                    decoration: const BoxDecoration(
+      backgroundColor: Colors.grey.shade50,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            children: [
+              SizedBox(height: 20.h),
+
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    height: 50.h,
+                    width: 100.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      margin: EdgeInsets.all(8.w),
+                      decoration: const BoxDecoration(
                         image: DecorationImage(
-                            image: AssetImage("assets/ncc.png"),
-                            fit: BoxFit.cover)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0, right: 12.0),
-                  child: GestureDetector(
-                      onTap: () {
-                        logout();
-                      },
-                      child: const Icon(
-                        Icons.logout,
-                        color: Colors.red,
-                        size: 30,
-                      )),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 30.h,
-            ),
-            Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  " Tracking",
-                  style: GoogleFonts.figtree(
-                      textStyle: TextStyle(
-                          fontSize: 55.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black)),
-                )),
-            Align(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  "  Your Inward \n  & Outward \n  Goods 🛒...",
-                  style: GoogleFonts.figtree(
-                      textStyle: TextStyle(
-                          fontSize: 39.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade600)),
-                )),
-            SizedBox(
-              height: 20.h,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 11.0, left: 11.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Get.to(const GoodsInward());
-                    },
-                    child: Container(
-                      height: height / 4.7.h,
-                      width: width / 2.15.w,
-                      decoration: BoxDecoration(
-                          color: Colors.brown.shade400,
-                          borderRadius: BorderRadius.circular(30.r)),
-                      child: Center(
-                          child: Text(
-                        "Gate \n Inwards",
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 23.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white)),
-                      )),
+                          image: AssetImage("assets/ncc.png"),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(
-                    width: 5.w,
-                  ),
                   GestureDetector(
-                    onTap: () {
-                      Get.to(const GoodsOutward());
-                    },
+                    onTap: logout,
                     child: Container(
-                      height: height / 4.7.h,
-                      width: width / 2.15.w,
+                      padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(30.r)),
-                      child: Center(
-                          child: Text(
-                        "Gate \n Outwards",
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 23.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black)),
-                      )),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.logout_rounded,
+                        color: Colors.red.shade600,
+                        size: 24.sp,
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
-            ),
-            SizedBox(
-              height: 5.h,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 11.0, left: 11.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Get.to(Reports());
-                    },
-                    child: Container(
-                      height: height / 4.7.h,
-                      width: width / 2.15.w,
-                      decoration: BoxDecoration(
-                          color: Colors.brown.shade400,
-                          borderRadius: BorderRadius.circular(30.r)),
-                      child: Center(
-                          child: Text(
-                        "GateIn \n Reports",
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 23.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white)),
-                      )),
+
+              SizedBox(height: 40.h),
+
+              // Title
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Tracking",
+                      style: GoogleFonts.inter(
+                        textStyle: TextStyle(
+                          fontSize: 36.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: 5.w,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Get.to(const ReportsOut());
-                    },
-                    child: Container(
-                      height: height / 4.7.h,
-                      width: width / 2.15.w,
-                      decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(30.r)),
-                      child: Center(
-                          child: Text(
-                        "GateOut \n Reports",
-                        style: GoogleFonts.dmSans(
-                            textStyle: TextStyle(
-                                fontSize: 23.sp,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black)),
-                      )),
+                    Text(
+                      "Your Inward & Outward Goods 📦",
+                      style: GoogleFonts.inter(
+                        textStyle: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
                     ),
-                  )
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              SizedBox(height: 40.h),
+
+              // Cards Grid
+              Expanded(
+                child: Column(
+                  children: [
+                    // First Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Get.to(const GoodsInward()),
+                            child: Container(
+                              height: height * 0.18,
+                              margin: EdgeInsets.only(right: 8.w),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.blue.shade600,
+                                    Colors.blue.shade500,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    top: 16.h,
+                                    right: 16.w,
+                                    child: Icon(
+                                      Icons.input_rounded,
+                                      color: Colors.white.withOpacity(0.8),
+                                      size: 28.sp,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 16.h,
+                                    left: 16.w,
+                                    child: Text(
+                                      "Gate\nInwards",
+                                      style: GoogleFonts.inter(
+                                        textStyle: TextStyle(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Get.to(const GoodsOutward()),
+                            child: Container(
+                              height: height * 0.18,
+                              margin: EdgeInsets.only(left: 8.w),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.green.shade600,
+                                    Colors.green.shade500,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.green.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    top: 16.h,
+                                    right: 16.w,
+                                    child: Icon(
+                                      Icons.output_rounded,
+                                      color: Colors.white.withOpacity(0.8),
+                                      size: 28.sp,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 16.h,
+                                    left: 16.w,
+                                    child: Text(
+                                      "Gate\nOutwards",
+                                      style: GoogleFonts.inter(
+                                        textStyle: TextStyle(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // Second Row
+                    // Row(
+                    //   children: [
+                    //     Expanded(
+                    //       child: GestureDetector(
+                    //         onTap: () => Get.to(Reports()),
+                    //         child: Container(
+                    //           height: height * 0.18,
+                    //           margin: EdgeInsets.only(right: 8.w),
+                    //           decoration: BoxDecoration(
+                    //             gradient: LinearGradient(
+                    //               begin: Alignment.topLeft,
+                    //               end: Alignment.bottomRight,
+                    //               colors: [
+                    //                 Colors.purple.shade600,
+                    //                 Colors.purple.shade500,
+                    //               ],
+                    //             ),
+                    //             borderRadius: BorderRadius.circular(20.r),
+                    //             boxShadow: [
+                    //               BoxShadow(
+                    //                 color: Colors.purple.withOpacity(0.3),
+                    //                 blurRadius: 12,
+                    //                 offset: const Offset(0, 6),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           child: Stack(
+                    //             children: [
+                    //               Positioned(
+                    //                 top: 16.h,
+                    //                 right: 16.w,
+                    //                 child: Icon(
+                    //                   Icons.analytics_rounded,
+                    //                   color: Colors.white.withOpacity(0.8),
+                    //                   size: 28.sp,
+                    //                 ),
+                    //               ),
+                    //               Positioned(
+                    //                 bottom: 16.h,
+                    //                 left: 16.w,
+                    //                 child: Text(
+                    //                   "GateIn\nReports",
+                    //                   style: GoogleFonts.inter(
+                    //                     textStyle: TextStyle(
+                    //                       fontSize: 18.sp,
+                    //                       fontWeight: FontWeight.w600,
+                    //                       color: Colors.white,
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //     Expanded(
+                    //       child: GestureDetector(
+                    //         onTap: () => Get.to(const ReportsOut()),
+                    //         child: Container(
+                    //           height: height * 0.18,
+                    //           margin: EdgeInsets.only(left: 8.w),
+                    //           decoration: BoxDecoration(
+                    //             gradient: LinearGradient(
+                    //               begin: Alignment.topLeft,
+                    //               end: Alignment.bottomRight,
+                    //               colors: [
+                    //                 Colors.orange.shade600,
+                    //                 Colors.orange.shade500,
+                    //               ],
+                    //             ),
+                    //             borderRadius: BorderRadius.circular(20.r),
+                    //             boxShadow: [
+                    //               BoxShadow(
+                    //                 color: Colors.orange.withOpacity(0.3),
+                    //                 blurRadius: 12,
+                    //                 offset: const Offset(0, 6),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           child: Stack(
+                    //             children: [
+                    //               Positioned(
+                    //                 top: 16.h,
+                    //                 right: 16.w,
+                    //                 child: Icon(
+                    //                   Icons.assessment_rounded,
+                    //                   color: Colors.white.withOpacity(0.8),
+                    //                   size: 28.sp,
+                    //                 ),
+                    //               ),
+                    //               Positioned(
+                    //                 bottom: 16.h,
+                    //                 left: 16.w,
+                    //                 child: Text(
+                    //                   "GateOut\nReports",
+                    //                   style: GoogleFonts.inter(
+                    //                     textStyle: TextStyle(
+                    //                       fontSize: 18.sp,
+                    //                       fontWeight: FontWeight.w600,
+                    //                       color: Colors.white,
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

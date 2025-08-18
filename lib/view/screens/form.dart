@@ -1,17 +1,17 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:ncc/view/screens/dashboard.dart';
+import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ncc/view/widgets/buttons.dart';
-import 'package:http/http.dart' as http;
 
 class FormIp extends StatefulWidget {
   const FormIp({super.key});
-
 
   @override
   State<FormIp> createState() => _FormIpState();
@@ -42,7 +42,8 @@ class _FormIpState extends State<FormIp> {
       _serverIpController.text = serverIp;
       _portController.text = port;
       _usernameController.text = username;
-      Get.off(() => const Dashboard()); // Navigate to Dashboard, replacing current route
+      Get.off(() =>
+          const Dashboard()); // Navigate to Dashboard, replacing current route
     }
   }
 
@@ -132,7 +133,8 @@ class _FormIpState extends State<FormIp> {
       },
     );
   }
-         /// Logout logic for sharepreferences ///
+
+  /// Logout logic for sharepreferences ///
   Future<void> logout() async {
     try {
       // Get SharedPreferences instance
@@ -163,7 +165,6 @@ class _FormIpState extends State<FormIp> {
       // Navigate back to login screen (FormIp)
       // Using Get.offAll() to remove all previous routes from the stack
       Get.offAll(() => const FormIp());
-
     } catch (e) {
       // Show error message if logout fails
       Get.snackbar(
@@ -175,7 +176,6 @@ class _FormIpState extends State<FormIp> {
       );
     }
   }
-
 
   Future<void> _login() async {
     final serverIp = _serverIpController.text.trim();
@@ -194,14 +194,14 @@ class _FormIpState extends State<FormIp> {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> users = responseData['data'] ?? [];
         final userExists = users.any((user) =>
-        (user['USERNAME'] as String).toLowerCase() == username.toLowerCase()
-        );
+            (user['USERNAME'] as String).toLowerCase() ==
+            username.toLowerCase());
 
         if (userExists) {
           // Find the USCODE for the user
           final user = users.firstWhere((user) =>
-          (user['USERNAME'] as String).toLowerCase() == username.toLowerCase()
-          );
+              (user['USERNAME'] as String).toLowerCase() ==
+              username.toLowerCase());
           final usCode = user['USCODE'];
 
           // Store user credentials and USCODE
@@ -212,8 +212,8 @@ class _FormIpState extends State<FormIp> {
           // await prefs.setString('usCode', usCode);
           await prefs.setString('usCode', usCode.toString());
 
-
-          Get.off(() => const Dashboard()); // Navigate to Dashboard, replacing current route
+          Get.off(() =>
+              const Dashboard()); // Navigate to Dashboard, replacing current route
         } else {
           _showError("Username not found in the database");
         }
@@ -224,7 +224,6 @@ class _FormIpState extends State<FormIp> {
       _showError("Connection Error: $e");
     }
   }
-
 
   void _showError(String message) {
     showDialog(
@@ -271,7 +270,7 @@ class _FormIpState extends State<FormIp> {
         title: const Subhead(
           text: "Login Form",
           weight: FontWeight.w500,
-          color: Colors.white,
+          color: Colors.black,
         ),
         centerTitle: true,
       ),
@@ -316,7 +315,8 @@ class _FormIpState extends State<FormIp> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.blueGrey, size: 50),
+                    icon: const Icon(Icons.settings,
+                        color: Colors.blueGrey, size: 50),
                     onPressed: _showSettingsDialog,
                   ),
                 ],

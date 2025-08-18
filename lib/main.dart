@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ncc/view/screens/form.dart';
-import 'package:ncc/view/screens/goods_inward.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,8 +34,7 @@ class MyApp extends StatelessWidget {
                 splash: Image.asset("assets/ncc.png"),
                 splashIconSize: 200,
                 duration: 2000,
-                nextScreen: const FormIp())
-            );
+                nextScreen: FormIp()));
       },
     );
   }

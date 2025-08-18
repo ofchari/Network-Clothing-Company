@@ -9,9 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:ncc/view/screens/scanner.dart';
-import 'package:ncc/view/widgets/buttons.dart';
 import 'package:ncc/view/widgets/subhead.dart';
-import 'package:ncc/view/widgets/text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GoodsOutward extends StatefulWidget {
@@ -610,37 +608,36 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: isLargeScreen ? 32.w : (isTablet ? 24.w : 16.w),
-            vertical: 8.h,
+            vertical: 14.h,
           ),
           child: Column(
             children: [
               // Main content area - expandable
-              Expanded(
-                child: Card(
-                  elevation: 0,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
+              Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  side: BorderSide(color: Colors.grey.shade200, width: 1),
+                ),
+                child: Container(
+                  height: 530.h,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16.r),
-                    side: BorderSide(color: Colors.grey.shade200, width: 1),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          spreadRadius: 0,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(isTablet ? 24.w : 20.w),
-                      child: SingleChildScrollView(
-                        child: _buildResponsiveContent(isTablet, isLargeScreen),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        spreadRadius: 0,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 24.w : 20.w),
+                    child: SingleChildScrollView(
+                      child: _buildResponsiveContent(isTablet, isLargeScreen),
                     ),
                   ),
                 ),
@@ -665,8 +662,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       return Column(
         children: [
           // First row - Exporter (full width)
-          _buildExporterField(isTablet),
-          SizedBox(height: sectionSpacing),
+          // _buildExporterField(isTablet),
+          // SizedBox(height: sectionSpacing),
 
           // Second row - Gate DC and DC No
           Row(
@@ -706,9 +703,9 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                 child: _buildDelQtyField(isTablet),
               ),
               SizedBox(width: 20.w),
-              Expanded(
-                child: _buildStmUserField(isTablet),
-              ),
+              // Expanded(
+              //   child: _buildStmUserField(isTablet),
+              // ),
             ],
           ),
         ],
@@ -717,8 +714,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
       // Single column layout for mobile and tablets
       return Column(
         children: [
-          _buildExporterField(isTablet),
-          SizedBox(height: sectionSpacing),
+          // _buildExporterField(isTablet),
+          // SizedBox(height: sectionSpacing),
           _buildGateDcField(isTablet),
           SizedBox(height: sectionSpacing),
           _buildDcNoField(isTablet),
@@ -728,8 +725,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
           _buildPartyField(isTablet),
           SizedBox(height: sectionSpacing),
           _buildDelQtyField(isTablet),
-          SizedBox(height: sectionSpacing),
-          _buildStmUserField(isTablet),
+          // SizedBox(height: sectionSpacing),
+          // _buildStmUserField(isTablet),
         ],
       );
     }
@@ -782,7 +779,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   size: 18.w,
                 ),
               ),
-              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
               border: InputBorder.none,
             ),
           ),
@@ -838,7 +836,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   size: 18.w,
                 ),
               ),
-              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
               border: InputBorder.none,
             ),
           ),
@@ -905,7 +904,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                       fontSize: 13.sp,
                       color: Colors.grey[500],
                     ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
                     border: InputBorder.none,
                   ),
                 ),
@@ -982,7 +982,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   size: 18.w,
                 ),
               ),
-              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
               border: InputBorder.none,
             ),
           ),
@@ -1038,7 +1039,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   size: 18.w,
                 ),
               ),
-              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
               border: InputBorder.none,
             ),
           ),
@@ -1108,7 +1110,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                       fontSize: 13.sp,
                       color: Colors.grey[500],
                     ),
-                    contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
                     border: InputBorder.none,
                   ),
                 ),
@@ -1119,12 +1122,16 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   icon: Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
-                      color: isEditable ? Colors.green.shade100 : Colors.blue.shade100,
+                      color: isEditable
+                          ? Colors.green.shade100
+                          : Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Icon(
                       isEditable ? Icons.check : Icons.edit,
-                      color: isEditable ? Colors.green.shade700 : Colors.blue.shade700,
+                      color: isEditable
+                          ? Colors.green.shade700
+                          : Colors.blue.shade700,
                       size: 20.w,
                     ),
                   ),
@@ -1189,7 +1196,8 @@ class _GoodsOutwardState extends State<GoodsOutward> {
                   size: 18.w,
                 ),
               ),
-              contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
               border: InputBorder.none,
             ),
           ),
@@ -1208,14 +1216,14 @@ class _GoodsOutwardState extends State<GoodsOutward> {
         width: isLargeScreen ? (width / 3).w : (width / 2).w,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue.shade600, Colors.blue.shade700],
+            colors: [Colors.green.shade600, Colors.green.shade700],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
+              color: Colors.green.withOpacity(0.3),
               spreadRadius: 0,
               blurRadius: 8,
               offset: const Offset(0, 4),
