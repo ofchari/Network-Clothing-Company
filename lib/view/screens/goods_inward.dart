@@ -1357,17 +1357,31 @@ class _GoodsInwardState extends State<GoodsInward> {
         final List<dynamic> responseData = json.decode(response.body);
 
         if (gst.isNotEmpty) {
-          // Handle specific GST response - auto-fill party name
+          // Handle specific GST response
           if (responseData.isNotEmpty) {
-            final partyId = responseData[0]['PARTYID']?.toString() ?? '';
-            final partynumbe = responseData[0]['PARTYMASID']?.toString() ?? '';
-            setState(() {
-              partyNameController.text = partyId;
-              party.text = partynumbe; // Also fill the party field
-              showPartyDropdown = false;
-            });
+            if (responseData.length == 1) {
+              // Single party: auto-fill
+              final partyId = responseData[0]['PARTYID']?.toString() ?? '';
+              final partynumbe =
+                  responseData[0]['PARTYMASID']?.toString() ?? '';
+              setState(() {
+                partyNameController.text = partyId;
+                party.text = partynumbe; // Also fill the party field
+                showPartyDropdown = false;
+              });
+            } else {
+              // Multiple parties: show dropdown
+              setState(() {
+                allParties = responseData.cast<Map<String, dynamic>>();
+                filteredParties = List.from(allParties);
+                showPartyDropdown = true;
+                partyNameController.clear();
+                party.clear();
+              });
+            }
             print(response.body);
           } else {
+            // No parties found
             Get.snackbar(
               "Not Found",
               "No party found for this GST number",
@@ -1378,13 +1392,27 @@ class _GoodsInwardState extends State<GoodsInward> {
             setState(() {
               partyNameController.clear();
               party.clear();
+              showPartyDropdown = false;
             });
           }
         } else {
-          // Handle all parties response - show dropdown
+          // Handle all parties response
           setState(() {
             allParties = responseData.cast<Map<String, dynamic>>();
-            showPartyDropdown = allParties.isNotEmpty;
+            if (partyNameController.text.isNotEmpty) {
+              filteredParties = allParties.where((party) {
+                final partyId =
+                    party['PARTYID']?.toString().toLowerCase() ?? '';
+                final partyGst = party['GST']?.toString().toLowerCase() ?? '';
+                final searchText = partyNameController.text.toLowerCase();
+                return partyId.contains(searchText) ||
+                    partyGst.contains(searchText);
+              }).toList();
+              showPartyDropdown = filteredParties.isNotEmpty;
+            } else {
+              showPartyDropdown = false;
+              filteredParties = [];
+            }
           });
         }
       } else {
