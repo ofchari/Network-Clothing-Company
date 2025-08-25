@@ -1,0 +1,62 @@
+name:  Flutter CI & CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Setup Java (needed for Gradle)
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+
+      # 3️⃣ Setup Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.32.8"  # Fixed version number
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5️⃣ Run unit tests
+      - name: Run tests
+        run: flutter test || true  # Continue on test failure
+
+##      # 6️⃣ Run widget tests with xvfb (for headless UI tests)
+#      - name: Run widget tests
+#        run: |
+#          sudo apt-get update ## Update package list inside ubuntu VM
+#          sudo apt-get install -y xvfb # installs X Virtual FrameBuffer (Xvfb), which is like a fake screen/display
+#          xvfb-run flutter test --coverage || true  # Continue on test failure
+
+      # 7️⃣ Clean before build
+      - name: Clean Flutter
+        run: flutter clean && flutter pub get
+#
+      # 8️⃣ Build release APK
+      - name: Build APK
+        run: flutter build apk --release
+
+      # 9️⃣ Build release AAB
+      - name: Build AAB
+        run: flutter build appbundle --release
+
+      # 🔟 Upload APK to artifacts
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk

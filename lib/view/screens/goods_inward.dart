@@ -406,6 +406,25 @@ class _GoodsInwardState extends State<GoodsInward> {
       return;
     }
 
+    // PRINTER VALIDATION - Check if printer is connected
+    if (selectedDevice == null || writeCharacteristic == null) {
+      Get.snackbar(
+        "Printer Required",
+        "Please select and connect to a printer before submitting the document.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      setState(() {
+        isLoading = false;
+      });
+
+      // Show printer selection dialog
+      showPrinterSelectionDialog();
+      return;
+    }
+
     final partyName = partyNameController.text;
     final dcNum = dcnumber.text;
 
@@ -589,22 +608,17 @@ class _GoodsInwardState extends State<GoodsInward> {
         final String createdOn =
             responseJson["CREATEDON"]?.toString() ?? formattedDateTime;
 
-        // Automatically print barcode using IDPRTC printer instead of showing dialog
-        if (selectedDevice != null && writeCharacteristic != null) {
-          _printIDPRTCBarcode(gateInMasId, postedDocId, createdOn)
-              .catchError((e) {
-            Get.snackbar(
-              "Error",
-              "Failed to print barcode: $e",
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-            );
-          });
-        } else {
-          // Show barcode dialog if printer not connected
-          showBarcodeDialog(context, gateInMasId, createdOn, postedDocId);
-        }
+        // Print barcode using connected IDPRTC printer
+        _printIDPRTCBarcode(gateInMasId, postedDocId, createdOn)
+            .catchError((e) {
+          Get.snackbar(
+            "Print Error",
+            "Document saved successfully but failed to print barcode: $e",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        });
 
         // Clear all fields after successful submission
         clearAllFields();
@@ -1173,8 +1187,8 @@ class _GoodsInwardState extends State<GoodsInward> {
       case 'garments':
         ptype = 'garments';
         break;
-      case 'general other':
-        ptype = 'general_other';
+      case 'general':
+        ptype = 'general';
         break;
       case 'others':
         ptype = 'others';
